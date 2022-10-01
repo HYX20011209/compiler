@@ -1,0 +1,17 @@
+                 U _GLOBAL_OFFSET_TABLE_
+00000000000000e2 t _GLOBAL__sub_I_main
+0000000000000095 t __static_initialization_and_destruction_0(int, int)
+                 U std::istream::operator>>(int&)
+                 U std::ostream::operator<<(std::ostream& (*)(std::ostream&))
+                 U std::ostream::operator<<(int)
+                 U std::ios_base::Init::Init()
+                 U std::ios_base::Init::~Init()
+                 U std::cin
+                 U std::cout
+                 U std::basic_ostream<char, std::char_traits<char> >& std::endl<char, std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&)
+0000000000000000 r std::piecewise_construct
+0000000000000000 b std::__ioinit
+                 U __cxa_atexit
+                 U __dso_handle
+                 U __stack_chk_fail
+0000000000000000 T main

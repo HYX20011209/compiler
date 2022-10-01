@@ -1,0 +1,46 @@
+0000000000003d80 d _DYNAMIC
+0000000000003f80 d _GLOBAL_OFFSET_TABLE_
+00000000000012cb t _GLOBAL__sub_I_main
+0000000000002000 R _IO_stdin_used
+                 w _ITM_deregisterTMCloneTable
+                 w _ITM_registerTMCloneTable
+000000000000127e t __static_initialization_and_destruction_0(int, int)
+                 U std::istream::operator>>(int&)@@GLIBCXX_3.4
+                 U std::ostream::operator<<(std::ostream& (*)(std::ostream&))@@GLIBCXX_3.4
+                 U std::ostream::operator<<(int)@@GLIBCXX_3.4
+                 U std::ios_base::Init::Init()@@GLIBCXX_3.4
+                 U std::ios_base::Init::~Init()@@GLIBCXX_3.4
+0000000000004160 B std::cin@@GLIBCXX_3.4
+0000000000004040 B std::cout@@GLIBCXX_3.4
+                 U std::basic_ostream<char, std::char_traits<char> >& std::endl<char, std::char_traits<char> >(std::basic_ostream<char, std::char_traits<char> >&)@@GLIBCXX_3.4
+0000000000002004 r std::piecewise_construct
+0000000000004279 b std::__ioinit
+00000000000021a4 r __FRAME_END__
+0000000000002008 r __GNU_EH_FRAME_HDR
+0000000000004010 D __TMC_END__
+0000000000004010 B __bss_start
+                 U __cxa_atexit@@GLIBC_2.2.5
+                 w __cxa_finalize@@GLIBC_2.2.5
+0000000000004000 D __data_start
+00000000000011a0 t __do_global_dtors_aux
+0000000000003d78 d __do_global_dtors_aux_fini_array_entry
+0000000000004008 D __dso_handle
+0000000000003d68 d __frame_dummy_init_array_entry
+                 w __gmon_start__
+0000000000003d78 d __init_array_end
+0000000000003d68 d __init_array_start
+0000000000001360 T __libc_csu_fini
+00000000000012f0 T __libc_csu_init
+                 U __libc_start_main@@GLIBC_2.2.5
+                 U __stack_chk_fail@@GLIBC_2.4
+0000000000004010 D _edata
+0000000000004280 B _end
+0000000000001368 T _fini
+0000000000001000 t _init
+0000000000001100 T _start
+0000000000004278 b completed.8061
+0000000000004000 W data_start
+0000000000001130 t deregister_tm_clones
+00000000000011e0 t frame_dummy
+00000000000011e9 T main
+0000000000001160 t register_tm_clones
