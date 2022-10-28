@@ -1,4 +1,4 @@
-Type			Attributes			Values
+Token			Lexeme			LineNum
 INT				int				3
 ID				f				3
 LPAREN				(				3

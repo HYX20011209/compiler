@@ -2500,7 +2500,7 @@ int main(int argc, char **argv){
         fprintf(stderr, "No such file or directory: %s", argv[3]);
         exit(EXIT_FAILURE);
     }
-    string caption = "Type\t\t\tAttributes\t\t\tValues";
+    string caption = "Token\t\t\tLexeme\t\t\tLineNum";
     DEBUG_FOR_LAB4(caption);
     yylex();
     return 0;
