@@ -1,4 +1,4 @@
-Token			Lexeme			LineNum
+Type			Attributes			Values
 INT				int				1
 ID				a				1
 SEMICOLON				;				1
