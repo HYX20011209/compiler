@@ -8,12 +8,15 @@ class Type
 private:
     int kind;
 protected:
-    enum {INT, VOID, FUNC};
+    enum {INT, CONST_INT, FLOAT, CONST_FLOAT, VOID, BOOL, FUNC};
 public:
     Type(int kind) : kind(kind) {};
     virtual ~Type() {};
     virtual std::string toStr() = 0;
     bool isInt() const {return kind == INT;};
+    bool isConstInt() const {return kind == CONST_INT;};
+    bool isFloat() const {return kind == FLOAT;};
+    bool isConstFloat() const {return kind == CONST_FLOAT;};
     bool isVoid() const {return kind == VOID;};
     bool isFunc() const {return kind == FUNC;};
 };
@@ -24,6 +27,34 @@ private:
     int size;
 public:
     IntType(int size) : Type(Type::INT), size(size){};
+    std::string toStr();
+};
+
+class FloatType : public Type
+{
+public:
+    FloatType() : Type(Type::FLOAT){};
+    std::string toStr();
+};
+
+class ConstIntType : public Type
+{
+public:
+    ConstIntType() : Type(Type::CONST_INT){};
+    std::string toStr();
+};
+
+class ConstFloatType : public Type
+{
+public:
+    ConstFloatType() : Type(Type::CONST_FLOAT){};
+    std::string toStr();
+};
+
+class BoolType : public Type
+{
+public:
+    BoolType() : Type(Type::BOOL){};
     std::string toStr();
 };
 
@@ -49,9 +80,17 @@ class TypeSystem
 {
 private:
     static IntType commonInt;
+    static FloatType commonFloat;
+    static ConstIntType commonConstInt;
+    static ConstFloatType commonConstFloat;
+    static BoolType commonBool;
     static VoidType commonVoid;
 public:
     static Type *intType;
+    static Type *floatType;
+    static Type *constIntType;
+    static Type *constFloatType;
+    static Type *boolType;
     static Type *voidType;
 };
 
