@@ -15,6 +15,7 @@
 
 %union {
     int itype;
+    float ftype
     char* strtype;
     StmtNode* stmttype;
     ExprNode* exprtype;
