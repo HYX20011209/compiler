@@ -16,7 +16,7 @@
 
 %union {
     int itype;
-    float ftype
+    float ftype;
     char* strtype;
     StmtNode* stmttype;
     ExprNode* exprtype;
@@ -45,11 +45,18 @@ Program
     }
     ;
 Stmts
-    : Stmt {$$=$1;}
-    | Stmts Stmt{
-        $$ = new SeqNode($1, $2);
-    }
+    :   Stmts Stmt{
+            SeqNode* node = (SeqNode*)$1;
+            node->addNext((StmtNode*)$2);
+            $$ = (StmtNode*) node;
+        }
+    |   Stmt{
+            SeqNode* node = new SeqNode();
+            node->addNext((StmtNode*)$1);
+            $$ = (StmtNode*) node;
+        }
     ;
+
 Stmt
     : AssignStmt {$$=$1;}
     | BlockStmt {$$=$1;}
