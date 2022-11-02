@@ -1,3 +1,4 @@
+//comment
 %code top{
     #include <iostream>
     #include <assert.h>
