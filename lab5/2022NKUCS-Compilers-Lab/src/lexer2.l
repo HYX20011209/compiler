@@ -3,43 +3,33 @@
     /*
     * You will need to comment this line in lab5.
     */
-    // #define ONLY_FOR_LEX
+    //#define ONLY_FOR_LEX
     
     #ifdef ONLY_FOR_LEX
     #else
     // #define YYSTYPE void *
-    
     #endif
 
     #define YY_NO_UNPUT
     #define YY_NO_INPUT
-    #include <string>
     #include "parser.h"
+    #include <string>
     #include <sstream>
+
     #include <ostream>
     #include <fstream>
     using namespace std;
     extern FILE *yyin; 
     extern FILE *yyout;
+
+    int offset = 1;
+
     #ifdef ONLY_FOR_LEX
-    void DEBUG_FOR_LAB4(std::string s){
-        std::string DEBUG_INFO = s + "\n";
-        fputs(DEBUG_INFO.c_str(), yyout);
-    }
-    
-    string char2str(char* ch)
-    {
-        string res = "";
-        for(int i=0;ch[i]!='\0';i++)
-        {
-            res+=ch[i];
-        }
-        return res;
+    void DEBUG_FOR_LAB4(std::string token, std::string lexeme){
+        fprintf(yyout, "[DEBUG LAB4]:  %10s%10s%10d%10d\n",token.c_str(), lexeme.c_str(), yylineno, offset);
     }
     #endif
 %}
-
-
 
 INTEGER ([1-9][0-9]*|0)
 OCTAL (0[1-7][0-7]*|0)
@@ -63,32 +53,38 @@ commentend "*/"
 <COMMENT>{commentend} {BEGIN INITIAL;}
 
 "int" {
+    /*
+    * Questions: 
+    *   Q1: Why we need to return INT in further labs?
+    *   Q2: What is "INT" actually?
+    */
     #ifdef ONLY_FOR_LEX
-        string s = "INT\t\t\t\tint\t\t\t\t"+to_string(yylineno);
-        DEBUG_FOR_LAB4(s);
+        DEBUG_FOR_LAB4("TYPE_INT", "int");
+        offset+=strlen(yytext);
     #else
         return TYPE_INT;
     #endif
 }
 "float" {
     #ifdef ONLY_FOR_LEX
-        string s = "FLOAT\t\t\t\tfloat\t\t\t\t"+to_string(yylineno);
-        DEBUG_FOR_LAB4(s);
+        DEBUG_FOR_LAB4("TYPE_FLOAT", "float");
+        offset+=strlen(yytext);
     #else
         return TYPE_FLOAT;
-    #endif 
+    #endif
 }
 "void" {
     #ifdef ONLY_FOR_LEX
-        string s = "VOID\t\t\t\tvoid\t\t\t\t"+to_string(yylineno);
-        DEBUG_FOR_LAB4(s);
+        DEBUG_FOR_LAB4("TYPE_VOID", "void");
+        offset+=strlen(yytext);
     #else
         return TYPE_VOID;
     #endif 
 }
 "const" {
     #ifdef ONLY_FOR_LEX
-        DEBUG_FOR_LAB4("CONST\t\t\t\tconst");
+        DEBUG_FOR_LAB4("CONST", "const");
+        offset+=strlen(yytext);
     #else
         return CONST;
     #endif 
@@ -96,252 +92,236 @@ commentend "*/"
 }
 "if" {
     #ifdef ONLY_FOR_LEX
-        string s = "IF\t\t\t\tif\t\t\t\t"+to_string(yylineno);
-        DEBUG_FOR_LAB4(s);
+        DEBUG_FOR_LAB4("IF", "if");
+        offset+=strlen(yytext);
     #else
         return IF;
     #endif
-};
+}
 "else" {
     #ifdef ONLY_FOR_LEX
-        string s = "ELSE\t\t\t\telse\t\t\t\t"+to_string(yylineno);
-        DEBUG_FOR_LAB4(s);
+        DEBUG_FOR_LAB4("ELSE", "else");
+        offset+=strlen(yytext);
     #else
         return ELSE;
     #endif
-};
-"return" {
-    #ifdef ONLY_FOR_LEX
-        string s = "RETURN\t\t\t\treturn\t\t\t\t"+to_string(yylineno);
-        DEBUG_FOR_LAB4(s);
-    #else
-        return RETURN;
-    #endif
 }
-
-
 "while" {
     #ifdef ONLY_FOR_LEX
-        string s = "WHILE\t\t\t\twhile\t\t\t\t"+to_string(yylineno);
-        DEBUG_FOR_LAB4(s);
+        DEBUG_FOR_LAB4("WHILE", "while");
+        offset+=strlen(yytext);
     #else
         return WHILE;
     #endif
 }
-
 "break" {
     #ifdef ONLY_FOR_LEX
-        string s = "BREAK\t\t\t\tbreak\t\t\t\t"+to_string(yylineno);
-        DEBUG_FOR_LAB4(s);
+        DEBUG_FOR_LAB4("BREAK", "break");
+        offset+=strlen(yytext);
     #else
         return BREAK;
     #endif
 }
 "continue" {
     #ifdef ONLY_FOR_LEX
-        string s = "CONTINUE\t\t\t\tcontinue\t\t\t\t"+to_string(yylineno);
-        DEBUG_FOR_LAB4(s);
+        DEBUG_FOR_LAB4("CONTINUE", "continue");
+        offset+=strlen(yytext);
     #else
         return CONTINUE;
     #endif
 }
-
-
-
+"return" {
+    #ifdef ONLY_FOR_LEX
+        DEBUG_FOR_LAB4("RETURN", "return");
+        offset+=strlen(yytext);
+    #else
+        return RETURN;
+    #endif
+}
 "=" {
     #ifdef ONLY_FOR_LEX
-        string s = "ASSIGN\t\t\t\t=\t\t\t\t"+to_string(yylineno);
-        DEBUG_FOR_LAB4(s);
+        DEBUG_FOR_LAB4("ASSIGN", "=");
+        offset+=strlen(yytext);
     #else
         return ASSIGN;
     #endif
 }
-
-
-
-
-"!" {
-    #ifdef ONLY_FOR_LEX
-        string s = "NOT\t\t\t\t!\t\t\t\t"+to_string(yylineno);
-        DEBUG_FOR_LAB4(s);
-    #else
-        return NOT;
-    #endif 
-}
-
-"<=" {
-    #ifdef ONLY_FOR_LEX
-        string s = "LESSEQ\t\t\t\t<=\t\t\t\t"+to_string(yylineno);
-        DEBUG_FOR_LAB4(s);
-    #else
-        return LESSEQ;
-    #endif 
-}
-">=" {
-    #ifdef ONLY_FOR_LEX
-        string s = "GREATEQ\t\t\t\t>=\t\t\t\t"+to_string(yylineno);
-        DEBUG_FOR_LAB4(s);
-    #else
-        return GREATEQ;
-    #endif 
-}
-">" {
-    #ifdef ONLY_FOR_LEX
-        string s = "GREAT\t\t\t\t>\t\t\t\t"+to_string(yylineno);
-        DEBUG_FOR_LAB4(s);
-    #else
-        return GREAT;
-    #endif 
-}
-"<" {
-    #ifdef ONLY_FOR_LEX
-        string s = "LESS\t\t\t\t<\t\t\t\t"+to_string(yylineno);
-        DEBUG_FOR_LAB4(s);
-    #else
-        return LESS;
-    #endif 
-}
 "==" {
     #ifdef ONLY_FOR_LEX
-        string s = "EQUAL\t\t\t\t==\t\t\t\t"+to_string(yylineno);
-        DEBUG_FOR_LAB4(s);
+        DEBUG_FOR_LAB4("EQ", "==");
+        offset+=strlen(yytext);
     #else
         return EQ;
-    #endif 
+    #endif
 }
 "!=" {
     #ifdef ONLY_FOR_LEX
-        string s = "NEQUAL\t\t\t\t!=\t\t\t\t"+to_string(yylineno);
-        DEBUG_FOR_LAB4(s);
+        DEBUG_FOR_LAB4("NEQ", "!=");
+        offset+=strlen(yytext);
     #else
         return NEQ;
-    #endif 
+    #endif
 }
-
-
-"&&" {
+"<" {
     #ifdef ONLY_FOR_LEX
-        string s = "AND\t\t\t\t&&\t\t\t\t"+to_string(yylineno);
-        DEBUG_FOR_LAB4(s);
+        DEBUG_FOR_LAB4("LESS", "<");
+        offset+=strlen(yytext);
     #else
-        return AND;
-    #endif 
+        return LESS;
+    #endif
 }
-"||" {
+"<=" {
     #ifdef ONLY_FOR_LEX
-        string s = "OR\t\t\t\t||\t\t\t\t"+to_string(yylineno);
-        DEBUG_FOR_LAB4(s);
+        DEBUG_FOR_LAB4("LESSEQ", "<=");
+        offset+=strlen(yytext);
     #else
-        return OR;
-    #endif 
+        return LESSEQ;
+    #endif
 }
-
-
+">" {
+    #ifdef ONLY_FOR_LEX
+        DEBUG_FOR_LAB4("GREAT", ">");
+        offset+=strlen(yytext);
+    #else
+        return GREAT;
+    #endif
+}
+">=" {
+    #ifdef ONLY_FOR_LEX
+        DEBUG_FOR_LAB4("GREATEQ", ">=");
+        offset+=strlen(yytext);
+    #else
+        return GREATEQ;
+    #endif
+}
 "+" {
     #ifdef ONLY_FOR_LEX
-        string s = "ADD\t\t\t\t+\t\t\t\t"+to_string(yylineno);
-        DEBUG_FOR_LAB4(s);
+        DEBUG_FOR_LAB4("ADD", "+");
+        offset+=strlen(yytext);
     #else
         return ADD;
     #endif
 }
 "-" {
     #ifdef ONLY_FOR_LEX
-        string s = "SUB\t\t\t\t-\t\t\t\t"+to_string(yylineno);
-        DEBUG_FOR_LAB4(s);
+        DEBUG_FOR_LAB4("SUB", "-");
+        offset+=strlen(yytext);
     #else
         return SUB;
-    #endif 
+    #endif
 }
 "*" {
     #ifdef ONLY_FOR_LEX
-        string s = "MUL\t\t\t\t*\t\t\t\t"+to_string(yylineno);
-        DEBUG_FOR_LAB4(s);
+        DEBUG_FOR_LAB4("MUL", "*");
+        offset+=strlen(yytext);
     #else
         return MUL;
-    #endif 
+    #endif
 }
 "/" {
     #ifdef ONLY_FOR_LEX
-        string s = "DIV\t\t\t\t/\t\t\t\t"+to_string(yylineno);
-        DEBUG_FOR_LAB4(s);
+        DEBUG_FOR_LAB4("DIV", "/");
+        offset+=strlen(yytext);
     #else
         return DIV;
-    #endif 
+    #endif
 }
 "%" {
     #ifdef ONLY_FOR_LEX
-        string s = "MOD\t\t\t\t"+"%"+"\t\t\t\t"+to_string(yylineno);
-        DEBUG_FOR_LAB4(s);
+        DEBUG_FOR_LAB4("MOD", "%");
+        offset+=strlen(yytext);
     #else
         return MOD;
-    #endif 
+    #endif
 }
-";" {
+"||" {
     #ifdef ONLY_FOR_LEX
-        string s = "SEMICOLON\t\t\t\t;\t\t\t\t"+to_string(yylineno);
-        DEBUG_FOR_LAB4(s);
+        DEBUG_FOR_LAB4("OR", "||");
+        offset+=strlen(yytext);
     #else
-        return SEMICOLON;
+        return OR;
+    #endif
+}
+"&&" {
+    #ifdef ONLY_FOR_LEX
+        DEBUG_FOR_LAB4("AND", "&&");
+        offset+=strlen(yytext);
+    #else
+        return AND;
+    #endif
+}
+"!" {
+    #ifdef ONLY_FOR_LEX
+        DEBUG_FOR_LAB4("NOT", "!");
+        offset+=strlen(yytext);
+    #else
+        return NOT;
     #endif
 }
 "," {
     #ifdef ONLY_FOR_LEX
-        string s = "COMMA\t\t\t\t,\t\t\t\t"+to_string(yylineno);
-        DEBUG_FOR_LAB4(s);
+        DEBUG_FOR_LAB4("COMMA", ",");
+        offset+=strlen(yytext);
     #else
         return COMMA;
     #endif
 }
+";" {
+    #ifdef ONLY_FOR_LEX
+        DEBUG_FOR_LAB4("SEMICOLON", ";");
+        offset+=strlen(yytext);
+    #else
+        return SEMICOLON;
+    #endif
+}
 "(" {
     #ifdef ONLY_FOR_LEX
-        string s = "LPAREN\t\t\t\t(\t\t\t\t"+to_string(yylineno);
-        DEBUG_FOR_LAB4(s);
+        DEBUG_FOR_LAB4("LPAREN", "(");
+        offset+=strlen(yytext);
     #else
         return LPAREN;
     #endif
 }
 ")" {
     #ifdef ONLY_FOR_LEX
-        string s = "RPAREN\t\t\t\t)\t\t\t\t"+to_string(yylineno);
-        DEBUG_FOR_LAB4(s);
+        DEBUG_FOR_LAB4("RPAREN", ")");
+        offset+=strlen(yytext);
     #else
     return RPAREN;
     #endif
 }
-"{" {
-    #ifdef ONLY_FOR_LEX
-        string s = "LBRACE\t\t\t\t{\t\t\t\t"+to_string(yylineno);
-        DEBUG_FOR_LAB4(s);
-    #else
-        return LBRACE;
-    #endif
-}
-"}" {
-    #ifdef ONLY_FOR_LEX
-        string s = "RBRACE\t\t\t\t}\t\t\t\t"+to_string(yylineno);
-        DEBUG_FOR_LAB4(s);
-    #else
-        return RBRACE;
-    #endif
-}
 "[" {
     #ifdef ONLY_FOR_LEX
-        string s = "LBRACKET\t\t\t\t)\t\t\t\t"+to_string(yylineno);
-        DEBUG_FOR_LAB4(s);
+        DEBUG_FOR_LAB4("LBRACKET", "[");
+        offset+=strlen(yytext);
     #else
         return LBRACKET;
     #endif
 }
 "]" {
     #ifdef ONLY_FOR_LEX
-        string s = "RBRACKET\t\t\t\t)\t\t\t\t"+to_string(yylineno);
-        DEBUG_FOR_LAB4(s);
+        DEBUG_FOR_LAB4("RBRACKET", "]");
+        offset+=strlen(yytext);
     #else
-        return RBRACKET;
+    return RBRACKET;
     #endif
 }
-
+"{" {
+    #ifdef ONLY_FOR_LEX
+        DEBUG_FOR_LAB4("LBRACE", "{");
+        offset+=strlen(yytext);
+    #else
+        return LBRACE;
+    #endif
+}
+"}" {
+    #ifdef ONLY_FOR_LEX
+        DEBUG_FOR_LAB4("RBRACE", "}");
+        offset+=strlen(yytext);
+    #else
+        return RBRACE;
+    #endif
+}
 "getint" {
     #ifdef ONLY_FOR_LEX
         DEBUG_FOR_LAB4("ID", "getint");
@@ -477,39 +457,35 @@ commentend "*/"
         return ID;
     #endif
 }
-
 {INTEGER} {
     #ifdef ONLY_FOR_LEX
-        string s = "INT\t\t\t\t"+char2str(yytext)+"\t\t\t\t"+to_string(yylineno);
-        DEBUG_FOR_LAB4(s);
+        DEBUG_FOR_LAB4("INTEGER", ""+std::string(yytext));
+        offset+=strlen(yytext);
     #else
-        yylval.ftype = atoi(yytext);
+        yylval.itype = atoi(yytext);
         return INTEGER;
-    #endif 
+    #endif
 }
-
 {FLOATING} {
     #ifdef ONLY_FOR_LEX
-        string s = "FLT\t\t\t\t"+char2str(yytext)+"\t\t\t\t"+to_string(yylineno);
-        DEBUG_FOR_LAB4(s);
+        DEBUG_FOR_LAB4("FLOATING", ""+std::string(yytext));
+        offset+=strlen(yytext);
     #else
         yylval.ftype = atoi(yytext);
         return FLOATING;
-    #endif 
+    #endif
 }
-
 {ID} {
     #ifdef ONLY_FOR_LEX
-        string s = "ID\t\t\t\t"+char2str(yytext)+"\t\t\t\t"+to_string(yylineno);
-        DEBUG_FOR_LAB4(s);
+        DEBUG_FOR_LAB4("ID", ""+std::string(yytext));
+        offset+=strlen(yytext);
     #else
         char* lexeme = new char[strlen(yytext) + 1];
         strcpy(lexeme, yytext);
         yylval.strtype = lexeme;
         return ID;
-    #endif 
+    #endif
 }
-
 {OCTAL} {
     char* stop;
     int dec = strtol(yytext, &stop, 8);
@@ -532,19 +508,32 @@ commentend "*/"
         return INTEGER;
     #endif 
 }
-
-{EOL} yylineno++;
-{WHITE}
+{EOL} {
+    #ifdef ONLY_FOR_LEX
+        yylineno++;
+        offset=1;
+    #endif
+}
+{WHITE} {
+    #ifdef ONLY_FOR_LEX
+        if(yytext[0] == 32)
+            offset+=1;
+        else
+            offset+=4;
+    #endif
+}
 {COMMENT}
 %%
 
 #ifdef ONLY_FOR_LEX
 int main(int argc, char **argv){
+
     if(argc != 5){
         fprintf(stderr, "Argument Not Enough");
         exit(EXIT_FAILURE);
     }
 
+    
     if(!(yyin = fopen(argv[1], "r"))){
         fprintf(stderr, "No such file or directory: %s", argv[1]);
         exit(EXIT_FAILURE);
@@ -554,8 +543,8 @@ int main(int argc, char **argv){
         fprintf(stderr, "No such file or directory: %s", argv[3]);
         exit(EXIT_FAILURE);
     }
-    string caption = "Type\t\t\tAttributes\t\t\tValues";
-    DEBUG_FOR_LAB4(caption);
+    fprintf(yyout, "[DEBUG LAB4]:  %10s%10s%10s%10s\n","token", "lexeme", "lineno", "offset");
+    yylineno = 1;
     yylex();
     return 0;
 }
