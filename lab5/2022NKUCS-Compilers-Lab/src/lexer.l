@@ -257,34 +257,34 @@ commentline "//".*
 
 "<=" {
     #ifdef ONLY_FOR_LEX
-        string s = "SE\t\t\t\t<=\t\t\t\t"+to_string(yylineno);
+        string s = "LESSEQ\t\t\t\t<=\t\t\t\t"+to_string(yylineno);
         DEBUG_FOR_LAB4(s);
     #else
-        return SE;
+        return LESSEQ;
     #endif 
 }
 ">=" {
     #ifdef ONLY_FOR_LEX
-        string s = "GE\t\t\t\t>=\t\t\t\t"+to_string(yylineno);
+        string s = "GREATEQ\t\t\t\t>=\t\t\t\t"+to_string(yylineno);
         DEBUG_FOR_LAB4(s);
     #else
-        return GE;
+        return GREATEQ;
     #endif 
 }
 ">" {
     #ifdef ONLY_FOR_LEX
-        string s = "GT\t\t\t\t>\t\t\t\t"+to_string(yylineno);
+        string s = "GREAT\t\t\t\t>\t\t\t\t"+to_string(yylineno);
         DEBUG_FOR_LAB4(s);
     #else
-        return GT;
+        return GREAT;
     #endif 
 }
 "<" {
     #ifdef ONLY_FOR_LEX
-        string s = "ST\t\t\t\t<\t\t\t\t"+to_string(yylineno);
+        string s = "LESS\t\t\t\t<\t\t\t\t"+to_string(yylineno);
         DEBUG_FOR_LAB4(s);
     #else
-        return ST;
+        return LESS;
     #endif 
 }
 "==" {
@@ -336,7 +336,7 @@ commentline "//".*
         string s = "SUB\t\t\t\t-\t\t\t\t"+to_string(yylineno);
         DEBUG_FOR_LAB4(s);
     #else
-        return MIN;
+        return SUB;
     #endif 
 }
 "*" {

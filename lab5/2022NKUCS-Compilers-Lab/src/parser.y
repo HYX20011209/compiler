@@ -28,14 +28,14 @@
 %token <strtype> ID 
 %token <itype> INTEGER
 %token <ftype> FLOATNUM
-%token IF ELSE
-%token INT VOID
-%token LPAREN RPAREN LBRACE RBRACE SEMICOLON
-%token ADD SUB OR AND LESS ASSIGN
-%token RETURN
+%token IF ELSE WHILE BREAK CONTINUE RETURN
+%token INT VOID FLOAT
+%token LPAREN RPAREN LBRACK RBRACK LBRACE RBRACE SEMICOLON
+%token ADD SUB MUL DIV MOD AND OR NOT LESS LESSEQ GREAT GREATEQ EQUAL NEQUAL ASSIGN
 
-%nterm <stmttype> Stmts Stmt AssignStmt BlockStmt IfStmt ReturnStmt DeclStmt FuncDef
-%nterm <exprtype> Exp AddExp Cond LOrExp PrimaryExp LVal RelExp LAndExp
+%nterm <stmttype> Stmts Stmt AssignStmt BlockStmt ExpStmt IfStmt WhileStmt BreakStmt ContinueStmt ReturnStmt 
+%nterm <stmttype> DeclStmt ConstDefList ConstDef ConstInitVal VarDefList VarDef VarInitVal FuncDef FuncParams FuncParam FuncRParams
+%nterm <exprtype> Exp ConstExp AddExp MulExp UnaryExp Cond LOrExp PrimaryExp LVal RelExp EqExp LAndExp
 %nterm <type> Type
 
 %precedence THEN
