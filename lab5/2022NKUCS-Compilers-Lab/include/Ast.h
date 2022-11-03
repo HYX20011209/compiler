@@ -80,12 +80,40 @@ public:
     void output(int level);
 };
 
+class DefNode : public StmtNode
+{
+private:
+    Id* id;
+    InitValNode* initVal;
+    bool isConst;
+    bool isArray;
+public:
+    DefNode(Id* id, InitValNode* initVal, bool isConst, bool isArray) : 
+        isConst(isConst), isArray(isArray), id(id), initVal(initVal){};
+    Id* getId() {return id;}
+    void output(int level);
+};
+
+class InitValNode : public StmtNode
+{
+private:
+    bool isConst;
+    bool isArray;
+    std::vector<ExprNode*> initValList;
+public:
+    InitValNode(bool isConst, bool isArray) : isConst(isConst), isArray(isArray){};
+    void addNext(ExprNode* next);
+    void output(int level);
+};
+
 class DeclStmt : public StmtNode
 {
 private:
-    Id *id;
+    bool isConst;
+    std::vector<DefNode*> defList;
 public:
-    DeclStmt(Id *id) : id(id){};
+    DeclStmt(bool isConst) : isConst(isConst){};
+    void addNext(DefNode* next);
     void output(int level);
 };
 
@@ -145,13 +173,24 @@ public:
     void output(int level);
 };
 
+class FuncDefParamsNode : public StmtNode
+{
+private:
+    std::vector<Id*> paramsList;
+public:
+    FuncDefParamsNode() {};
+    void addNext(Id* next);
+    void output(int level);
+};
+
 class FunctionDef : public StmtNode
 {
 private:
     SymbolEntry *se;
     StmtNode *stmt;
+    FuncDefParamsNode *params;
 public:
-    FunctionDef(SymbolEntry *se, StmtNode *stmt) : se(se), stmt(stmt){};
+    FunctionDef(SymbolEntry *se, FuncDefParamsNode *params, StmtNode *stmt) : se(se),  params(params), stmt(stmt){};
     void output(int level);
 };
 

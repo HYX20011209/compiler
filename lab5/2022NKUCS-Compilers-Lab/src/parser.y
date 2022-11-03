@@ -25,6 +25,7 @@
 }
 
 %start Program
+%token CONST
 %token <strtype> ID 
 %token <itype> INTEGER
 %token <ftype> FLOATNUM
@@ -451,6 +452,7 @@ RelExp
 Type
     : INT_TYPE {
         $$ = TypeSystem::intType;
+        //例如读取到"int a"，就把currentType设置为int
         currentType = TypeSystem::intType;
     }
     | FLOAT_TYPE{
@@ -463,16 +465,116 @@ Type
     ;
 
 
+// 声明语句
 DeclStmt
-    :
-    Type ID SEMICOLON {
-        SymbolEntry *se;
-        se = new IdentifierSymbolEntry($1, $2, identifiers->getLevel());
-        identifiers->install($2, se);
-        $$ = new DeclStmt(new Id(se));
-        delete []$2;
-    }
+    :   CONST Type ConstDefList SEMICOLON {
+            $$ = $3;
+        }
+    |   Type VarDefList SEMICOLON {
+            $$ = $2;
+        }
     ;
+
+// 变量定义列表
+VarDefList
+    :   VarDefList COMMA VarDef {
+            DeclStmt* node = (DeclStmt*) $1;
+            node->addNext((DefNode*)$3);
+            $$ = node;
+        }
+    |   VarDef {
+            DeclStmt* node = new DeclStmt(true);
+            node->addNext((DefNode*)$1);
+            $$ = node;
+        }
+    ;
+
+// 变量定义
+VarDef
+    :   ID {
+            // 将ID插入符号表中
+            Type* type;
+            if(currentType->isInt()){
+                type = TypeSystem::intType;
+            }
+            else{
+                type = TypeSystem::floatType;
+            }
+            SymbolEntry *se;
+            se = new IdentifierSymbolEntry(type, $1, identifiers->getLevel());
+            identifiers->install($1, se);
+            $$ = new DefNode(new Id(se), nullptr, false, false);
+        }
+    |   ID ASSIGN VarInitVal {
+            Type* type;
+            if(currentType->isInt()){
+                type = TypeSystem::intType;
+            }
+            else{
+                type = TypeSystem::floatType;
+            }
+            SymbolEntry *se;
+            se = new IdentifierSymbolEntry(type, $1, identifiers->getLevel());
+            identifiers->install($1, se);
+            $$ = new DefNode(new Id(se), (InitValNode*)$3, false, false);
+        }
+    // todo 数组变量的定义
+    ;
+
+// 变量初始化值
+VarInitVal
+    :   Exp {
+            InitValNode* node = new InitValNode(false, false);
+            node->addNext((ExprNode*)$1);
+            $$ = node;
+        }
+    // todo 数组变量的初始化值
+    ;
+
+// 常量定义列表
+ConstDefList
+    :   ConstDefList COMMA ConstDef {
+            DeclStmt* node = (DeclStmt*) $1;
+            node->addNext((DefNode*)$3);
+            $$ = node;
+        }
+    |   ConstDef {
+            DeclStmt* node = new DeclStmt(true);
+            node->addNext((DefNode*)$1);
+            $$ = node;
+        }
+    ;
+
+// 常量定义
+ConstDef
+    :   ID ASSIGN ConstInitVal {
+            // 将ID插入符号表中
+            Type* type;
+            if(currentType->isInt()){
+                type = TypeSystem::constIntType;
+            }
+            else{
+                type = TypeSystem::constFloatType;
+            }
+            SymbolEntry *se;
+            se = new IdentifierSymbolEntry(type, $1, identifiers->getLevel());
+            identifiers->install($1, se);
+            $$ = new DefNode(new Id(se), (InitValNode*)$3, true, false);
+        }
+    // todo 数组常量的定义
+    ;
+
+// 常量初始化值
+ConstInitVal
+    :   ConstExp {
+            InitValNode* node = new InitValNode(true, false);
+            node->addNext((ExprNode*)$1);
+            $$ = node;
+        }
+    // todo 常量数组的初始化值 
+    ;
+
+
 FuncDef
     :
     Type ID {
@@ -482,19 +584,51 @@ FuncDef
         identifiers->install($2, se);
         identifiers = new SymbolTable(identifiers);
     }
-    LPAREN RPAREN
+    LPAREN FuncParams RPAREN
     BlockStmt
     {
         SymbolEntry *se;
         se = identifiers->lookup($2);
         assert(se != nullptr);
-        $$ = new FunctionDef(se, $6);
-        SymbolTable *top = identifiers;
+        $$ = new FunctionDef(se, (FuncDefParamsNode*)$5, $7);
+        // SymbolTable *top = identifiers;
         identifiers = identifiers->getPrev();
-        delete top;
+        // delete top;
         delete []$2;
     }
     ;
+
+
+// 函数参数列表
+FuncParams
+    :   FuncParams COMMA FuncParam {
+            FuncDefParamsNode* node = (FuncDefParamsNode*)$1;
+            node->addNext(((DefNode*)$3)->getId());
+            $$ = node;
+        }
+    |   FuncParam {
+            FuncDefParamsNode* node = new FuncDefParamsNode();
+            node->addNext(((DefNode*)$1)->getId());
+            $$ = node;
+        }
+    |   %empty {
+            $$ = nullptr;
+        }
+    ;
+
+// 函数参数
+FuncParam
+    :   Type ID {
+            SymbolEntry *se = new IdentifierSymbolEntry($1, $2, identifiers->getLevel());
+            identifiers->install($2, se);
+            $$ = new DefNode(new Id(se), nullptr, false, false);
+        }
+    // todo 数组函数参数
+    ;
+    
+
+
+
 %%
 
 int yyerror(char const* message)
