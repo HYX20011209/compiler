@@ -70,11 +70,18 @@ void CompoundStmt::output(int level)
     stmt->output(level + 4);
 }
 
+void SeqNode::addNext(StmtNode* next)
+{
+    stmtList.push_back(next);
+}
+
 void SeqNode::output(int level)
 {
     fprintf(yyout, "%*cSequence\n", level, ' ');
-    stmt1->output(level + 4);
-    stmt2->output(level + 4);
+    for(auto stmt : stmtList)
+    {
+        stmt -> output(level + 4);
+    }
 }
 
 void DeclStmt::output(int level)
@@ -119,4 +126,9 @@ void FunctionDef::output(int level)
     fprintf(yyout, "%*cFunctionDefine function name: %s, type: %s\n", level, ' ', 
             name.c_str(), type.c_str());
     stmt->output(level + 4);
+}
+
+void EmptyStmt::output(int levle)
+{
+    fprintf(yyout,"%*cEmptyStmt\n", level, ' ');
 }

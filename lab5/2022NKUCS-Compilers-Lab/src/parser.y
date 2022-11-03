@@ -33,10 +33,10 @@
 %token LPAREN RPAREN LBRACK RBRACK LBRACE RBRACE SEMICOLON
 %token ADD SUB MUL DIV MOD AND OR NOT LESS LESSEQ GREAT GREATEQ EQUAL NEQUAL ASSIGN
 
-%nterm <stmttype> Stmts Stmt AssignStmt BlockStmt ExpStmt IfStmt WhileStmt BreakStmt ContinueStmt ReturnStmt 
-%nterm <stmttype> DeclStmt ConstDefList ConstDef ConstInitVal VarDefList VarDef VarInitVal FuncDef FuncParams FuncParam FuncRParams
-%nterm <exprtype> Exp ConstExp AddExp MulExp UnaryExp Cond LOrExp PrimaryExp LVal RelExp EqExp LAndExp
-%nterm <type> Type
+%type <stmttype> Stmts Stmt AssignStmt BlockStmt ExpStmt IfStmt WhileStmt BreakStmt ContinueStmt ReturnStmt 
+%type <stmttype> DeclStmt ConstDefList ConstDef ConstInitVal VarDefList VarDef VarInitVal FuncDef FuncParams FuncParam FuncRParams
+%type <exprtype> Exp ConstExp AddExp MulExp UnaryExp Cond LOrExp PrimaryExp LVal RelExp EqExp LAndExp
+%type <type> Type
 
 %precedence THEN
 %precedence ELSE
@@ -47,20 +47,38 @@ Program
     }
     ;
 
-Stmts
+/* Stmts
     : Stmt {$$=$1;}
     | Stmts Stmt{
         $$ = new SeqNode($1, $2);
     }
+    ; */
+Stmts
+    :   Stmts Stmt{
+            //这里需要注意的是递归推导出的每个Stmts都是同一个节点，
+            //但拆分出的Stmt会被自下而上的压入vector
+            SeqNode* node = (SeqNode*)$1; //创建一个SeqNode类型节点指针，赋值为Stmts
+            node->addNext((StmtNode*)$2);//将Stmt放入该节点的vector中
+            $$ = (StmtNode*) node;//将识别到的Stmts赋值为该节点（指针）
+        }
+    |   Stmt{
+            SeqNode* node = new SeqNode();
+            node->addNext((StmtNode*)$1);
+            $$ = (StmtNode*) node;
+        }
     ;
 
 Stmt
     : AssignStmt {$$=$1;}
+    | ExpStmt SEMICOLON{$$=$1;}
     | BlockStmt {$$=$1;}
     | IfStmt {$$=$1;}
+    | WhileStmt {$$=$1;}
+    | BreakStmt {$$=$1;}
     | ReturnStmt {$$=$1;}
     | DeclStmt {$$=$1;}
     | FuncDef {$$=$1;}
+    | SEMICOLON {$$ = new EmptyStmt();}
     ;
 LVal
     : ID {

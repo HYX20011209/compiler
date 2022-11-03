@@ -71,9 +71,10 @@ public:
 class SeqNode : public StmtNode
 {
 private:
-    StmtNode *stmt1, *stmt2;
+    std::vector<StmtNode*> stmtList;
 public:
-    SeqNode(StmtNode *stmt1, StmtNode *stmt2) : stmt1(stmt1), stmt2(stmt2){};
+    SeqNode(){}
+    void addNext(StmtNode* next);
     void output(int level);
 };
 
