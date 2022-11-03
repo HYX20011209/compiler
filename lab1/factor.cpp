@@ -10,6 +10,8 @@ int main()
     {
         f = f*i;
         i = i+1;
+        break;
+        i = i+1;
     }
     cout<<f<<endl;
 }

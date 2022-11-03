@@ -44,17 +44,12 @@ Program
         ast.setRoot($1);
     }
     ;
+
 Stmts
-    :   Stmts Stmt{
-            SeqNode* node = (SeqNode*)$1;
-            node->addNext((StmtNode*)$2);
-            $$ = (StmtNode*) node;
-        }
-    |   Stmt{
-            SeqNode* node = new SeqNode();
-            node->addNext((StmtNode*)$1);
-            $$ = (StmtNode*) node;
-        }
+    : Stmt {$$=$1;}
+    | Stmts Stmt{
+        $$ = new SeqNode($1, $2);
+    }
     ;
 
 Stmt
@@ -87,13 +82,23 @@ AssignStmt
     ;
 BlockStmt
     :   LBRACE 
-        {identifiers = new SymbolTable(identifiers);} 
+        {identifiers = new SymbolTable(identifiers);}
         Stmts RBRACE 
         {
             $$ = new CompoundStmt($3);
-            SymbolTable *top = identifiers;
+            // SymbolTable *top = identifiers;
             identifiers = identifiers->getPrev();
-            delete top;
+            // delete top;
+        }
+    |   LBRACE 
+        {identifiers = new SymbolTable(identifiers);} 
+        RBRACE 
+        {
+            EmptyStmt* tmpNode = new EmptyStmt();
+            $$ = new CompoundStmt(tmpNode);
+            // SymbolTable *top = identifiers;
+            identifiers = identifiers->getPrev();
+            // delete top;
         }
     ;
 IfStmt

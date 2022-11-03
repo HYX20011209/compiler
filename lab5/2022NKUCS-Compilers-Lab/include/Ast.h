@@ -52,6 +52,13 @@ public:
 class StmtNode : public Node
 {};
 
+class EmptyStmt : public StmtNode
+{
+public:
+    EmptyStmt(){};
+    void output(int level);
+};
+
 class CompoundStmt : public StmtNode
 {
 private:
