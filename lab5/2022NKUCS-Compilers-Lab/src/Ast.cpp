@@ -2,6 +2,7 @@
 #include "SymbolTable.h"
 #include <string>
 #include "Type.h"
+#include<iostream>
 
 extern FILE *yyout;
 int Node::counter = 0;
@@ -29,6 +30,15 @@ void BinaryExpr::output(int level)
         case SUB:
             op_str = "sub";
             break;
+        case MUL:
+            op_str = "mul";
+            break;
+        case DIV:
+            op_str = "div";
+            break;
+        case MOD:
+            op_str = "mod";
+            break;
         case AND:
             op_str = "and";
             break;
@@ -38,8 +48,23 @@ void BinaryExpr::output(int level)
         case LESS:
             op_str = "less";
             break;
+        case LESSEQ:
+            op_str = "lesseq";
+            break;
+        case GREAT:
+            op_str = "great";
+            break;
+        case GREATEQ:
+            op_str = "greateq";
+            break;
+        case EQUAL:
+            op_str = "eq";
+            break;
+        case NEQUAL:
+            op_str = "neq";
+            break;
     }
-    fprintf(yyout, "%*cBinaryExpr\top: %s\n", level, ' ', op_str.c_str());
+    fprintf(yyout, "%*cBinaryExpr\top: %s\ttype: %s\n", level, ' ', op_str.c_str(), symbolEntry->getType()->toStr().c_str());
     expr1->output(level + 4);
     expr2->output(level + 4);
 }
@@ -92,7 +117,9 @@ void SeqNode::output(int level)
 void DeclStmt::output(int level)
 {
     fprintf(yyout, "%*cDeclStmt\n", level, ' ');
-    id->output(level + 4);
+    for(auto def : defList){
+        def->output(level+4);
+    }
 }
 
 void IfStmt::output(int level)
@@ -115,10 +142,10 @@ void BreakStmt::output(int level)
     fprintf(yyout, "%*cBreak Stmt\n", level, ' ');
 }
 
-void ContinueStmt::output(int level)
-{
-    fprintf(yyout, "%*cContinue Stmt\n", level, ' ');
-}
+// void ContinueStmt::output(int level)
+// {
+//     fprintf(yyout, "%*cContinue Stmt\n", level, ' ');
+// }
 
 void ReturnStmt::output(int level)
 {
@@ -155,7 +182,7 @@ void FunctionDef::output(int level)
     stmt->output(level + 4);
 }
 
-void EmptyStmt::output(int levle)
+void EmptyStmt::output(int level)
 {
     fprintf(yyout,"%*cEmptyStmt\n", level, ' ');
 }
@@ -212,13 +239,7 @@ void DeclStmt::addNext(DefNode* next)
     defList.push_back(next);
 }
 
-void DeclStmt::output(int level)
-{
-    fprintf(yyout, "%*cDeclStmt\n", level, ' ');
-    for(auto def : defList){
-        def->output(level+4);
-    }
-}
+
 
 void InitValNode::addNext(ExprNode* next)
 {
@@ -247,4 +268,44 @@ void FuncDefParamsNode::output(int level)
     for(auto param : paramsList){
         param->output(level+4);
     }
+}
+
+Type* ExprNode::getType()
+{
+    return symbolEntry->getType();
+}
+
+void ExprStmtNode::addNext(ExprNode* next)
+{
+    exprList.push_back(next);
+}
+
+void ExprStmtNode::output(int level)
+{
+    fprintf(yyout, "%*cExprStmtNode\n", level, ' ');
+    for(auto expr : exprList)
+    {
+        expr->output(level+4);
+    }
+}
+
+void OneOpExpr::output(int level) {
+    std::string op_str;
+    switch (op) {
+        case NOT:
+            op_str = "not";
+            break;
+        case SUB:
+            op_str = "minus";
+            break;
+    }
+    fprintf(yyout, "%*cOneOpExpr\top: %s\ttype: %s\n", level, ' ', op_str.c_str(), symbolEntry->getType()->toStr().c_str());
+    expr->output(level + 4);
+}
+
+void WhileStmt::output(int level)
+{
+    fprintf(yyout, "%*cWhileStmt\n", level, ' ');
+    cond->output(level+4);
+    bodyStmt->output(level+4);
 }

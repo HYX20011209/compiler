@@ -3,29 +3,30 @@
     /*
     * You will need to comment this line in lab5.
     */
-    #define ONLY_FOR_LEX
+    // #define ONLY_FOR_LEX
     
     #ifdef ONLY_FOR_LEX
     #else
-    #define YYSTYPE void *
-    #include "parser.h"
+    // #define YYSTYPE void *
+    
     #endif
 
     #define YY_NO_UNPUT
     #define YY_NO_INPUT
     #include <string>
-
-    #ifdef ONLY_FOR_LEX
+    #include "parser.h"
+    
     #include <ostream>
     #include <fstream>
     using namespace std;
     extern FILE *yyin; 
     extern FILE *yyout;
-
+    #ifdef ONLY_FOR_LEX
     void DEBUG_FOR_LAB4(std::string s){
         std::string DEBUG_INFO = s + "\n";
         fputs(DEBUG_INFO.c_str(), yyout);
     }
+    #endif
     string char2str(char* ch)
     {
         string res = "";
@@ -35,42 +36,38 @@
         }
         return res;
     }
-    #endif
+    
 %}
 
 
 
-
+INTEGER ([1-9][0-9]*|0)
 ID [[:alpha:]_][[:alpha:][:digit:]_]*
-DECIMAL ([1-9][0-9]*|0)
-HEXADECIMAL (0x|0X)[0-9A-Fa-f]+
-OCTAL       (0)[0-7]+
 FLOATNUM   ([1-9][0-9]*|0).[0-9]+
 
 EOL (\r\n|\n|\r)
 WHITE [\t ]
 
-BLOCKCOMMENTBEGIN "/*"
-BLOCKCOMMENTELEMENT .|\n
-BLOCKCOMMENTEND "*/"
-%x BLOCKCOMMENT
-
-
-commentline "//".*
+COMMENT (\/\/[^\n]*)
+commentbegin "/*"
+commentelement .
+commentline \n
+commentend "*/"
+%x COMMENT
+%x COMBLOCK
 
 %%
+{commentbegin} {BEGIN COMMENT;}
+<COMMENT>{commentelement} {}
+<COMMENT>{commentline} {yylineno++;}
+<COMMENT>{commentend} {BEGIN INITIAL;}
 
 "int" {
-    /*
-    * Questions: 
-    *   Q1: Why we need to return INT in further labs?
-    *   Q2: What is "INT" actually?
-    */
     #ifdef ONLY_FOR_LEX
         string s = "INT\t\t\t\tint\t\t\t\t"+to_string(yylineno);
         DEBUG_FOR_LAB4(s);
     #else
-        return INT;
+        return INT_TYPE;
     #endif
 }
 "float" {
@@ -78,7 +75,7 @@ commentline "//".*
         string s = "FLOAT\t\t\t\tfloat\t\t\t\t"+to_string(yylineno);
         DEBUG_FOR_LAB4(s);
     #else
-        return FLOAT;
+        return FLOAT_TYPE;
     #endif 
 }
 "void" {
@@ -86,8 +83,16 @@ commentline "//".*
         string s = "VOID\t\t\t\tvoid\t\t\t\t"+to_string(yylineno);
         DEBUG_FOR_LAB4(s);
     #else
-        return VOID;
+        return VOID_TYPE;
     #endif 
+}
+"const" {
+    #ifdef ONLY_FOR_LEX
+        DEBUG_FOR_LAB4("CONST\t\t\t\tconst");
+    #else
+        return CONST;
+    #endif 
+
 }
 "if" {
     #ifdef ONLY_FOR_LEX
@@ -113,30 +118,8 @@ commentline "//".*
         return RETURN;
     #endif
 }
-"switch" {
-    #ifdef ONLY_FOR_LEX
-        string s = "SWITCH\t\t\t\tswitch\t\t\t\t"+to_string(yylineno);
-        DEBUG_FOR_LAB4(s);
-    #else
-        return SWITCH;
-    #endif
-}
-"case" {
-    #ifdef ONLY_FOR_LEX
-        string s = "CASE\t\t\t\tcase\t\t\t\t"+to_string(yylineno);
-        DEBUG_FOR_LAB4(s);
-    #else
-        return CASE;
-    #endif
-}
-"for" {
-    #ifdef ONLY_FOR_LEX
-        string s = "FOR\t\t\t\tfor\t\t\t\t"+to_string(yylineno);
-        DEBUG_FOR_LAB4(s);
-    #else
-        return FOR;
-    #endif
-}
+
+
 "while" {
     #ifdef ONLY_FOR_LEX
         string s = "WHILE\t\t\t\twhile\t\t\t\t"+to_string(yylineno);
@@ -145,14 +128,7 @@ commentline "//".*
         return WHILE;
     #endif
 }
-"do" {
-    #ifdef ONLY_FOR_LEX
-        string s = "DO\t\t\t\tdo\t\t\t\t"+to_string(yylineno);
-        DEBUG_FOR_LAB4(s);
-    #else
-        return DO;
-    #endif
-}
+
 "break" {
     #ifdef ONLY_FOR_LEX
         string s = "BREAK\t\t\t\tbreak\t\t\t\t"+to_string(yylineno);
@@ -180,78 +156,16 @@ commentline "//".*
         return ASSIGN;
     #endif
 }
-"+=" {
-    #ifdef ONLY_FOR_LEX
-        string s = "ADDASGN\t\t\t\t+=\t\t\t\t"+to_string(yylineno);
-        DEBUG_FOR_LAB4(s);
-    #else
-        return ADDASGN;
-    #endif 
-}
-"-=" {
-    #ifdef ONLY_FOR_LEX
-        string s = "MINASGN\t\t\t\t-=\t\t\t\t"+to_string(yylineno);
-        DEBUG_FOR_LAB4(s);
-    #else
-        return MINASGN;
-    #endif 
-}
-"*=" {
-    #ifdef ONLY_FOR_LEX
-        string s = "MULASGN\t\t\t\t*=\t\t\t\t"+to_string(yylineno);
-        DEBUG_FOR_LAB4(s);
-    #else
-        return MULASGN;
-    #endif 
-}
-"/=" {
-    #ifdef ONLY_FOR_LEX
-        string s = "DIVASGN\t\t\t\t/=\t\t\t\t"+to_string(yylineno);
-        DEBUG_FOR_LAB4(s);
-    #else
-        return DIVASGN;
-    #endif 
-}
 
 
-"&" {
-    #ifdef ONLY_FOR_LEX
-        string s = "QUO\t\t\t\t&\t\t\t\t"+to_string(yylineno);
-        DEBUG_FOR_LAB4(s);
-    #else
-        return QUO;
-    #endif 
-}
+
+
 "!" {
     #ifdef ONLY_FOR_LEX
         string s = "NOT\t\t\t\t!\t\t\t\t"+to_string(yylineno);
         DEBUG_FOR_LAB4(s);
     #else
         return NOT;
-    #endif 
-}
-"->" {
-    #ifdef ONLY_FOR_LEX
-        string s = "ARROW\t\t\t\t->\t\t\t\t"+to_string(yylineno);
-        DEBUG_FOR_LAB4(s);
-    #else
-        return ARROW;
-    #endif 
-}
-"++" {
-    #ifdef ONLY_FOR_LEX
-        string s = "SADD\t\t\t\t++\t\t\t\t"+to_string(yylineno);
-        DEBUG_FOR_LAB4(s);
-    #else
-        return SADD;
-    #endif 
-}
-"--" {
-    #ifdef ONLY_FOR_LEX
-        string s = "SMIN\t\t\t\t--\t\t\t\t"+to_string(yylineno);
-        DEBUG_FOR_LAB4(s);
-    #else
-        return SMIN;
     #endif 
 }
 
@@ -366,7 +280,7 @@ commentline "//".*
 "," {
     #ifdef ONLY_FOR_LEX
         string s = "COMMA\t\t\t\t,\t\t\t\t"+to_string(yylineno);
-        DEBUG_FOR_LAB4("COMMA", ",");
+        DEBUG_FOR_LAB4(s);
     #else
         return COMMA;
     #endif
@@ -420,84 +334,50 @@ commentline "//".*
     #endif
 }
 
+{INTEGER} {
+    #ifdef ONLY_FOR_LEX
+        string s = "INT\t\t\t\t"+char2str(yytext)+"\t\t\t\t"+to_string(yylineno);
+        DEBUG_FOR_LAB4(s);
+    #else
+        yylval.ftype = atoi(yytext);
+        return INTEGER;
+    #endif 
+}
+
 {ID} {
     #ifdef ONLY_FOR_LEX
         string s = "ID\t\t\t\t"+char2str(yytext)+"\t\t\t\t"+to_string(yylineno);
         DEBUG_FOR_LAB4(s);
     #else
-        return DECIMAL;
+        char* lexeme = new char[strlen(yytext) + 1];
+        strcpy(lexeme, yytext);
+        yylval.strtype = lexeme;
+        return ID;
     #endif 
 }
 
-{DECIMAL} {
-    #ifdef ONLY_FOR_LEX
-        string s = "DEC\t\t\t\t"+char2str(yytext)+"\t\t\t\t"+to_string(yylineno);
-        DEBUG_FOR_LAB4(s);
-    #else
-        return DECIMAL;
-    #endif 
-}
-{HEXADECIMAL} {
-    #ifdef ONLY_FOR_LEX
-        string s = "HEX\t\t\t\t"+to_string(strtol(yytext,NULL,16))+"\t\t\t\t"+to_string(yylineno);
-        DEBUG_FOR_LAB4(s);
-    #else
-        return HEXADECIMAL;
-    #endif 
-}
-{OCTAL} {
-    #ifdef ONLY_FOR_LEX
-        string s = "OCT\t\t\t\t"+to_string(strtol(yytext,NULL,8))+"\t\t\t\t"+to_string(yylineno);
-        DEBUG_FOR_LAB4(s);
-    #else
-        return OCTAL;
-    #endif 
-}
+
+
+
+
+
+
 {FLOATNUM} {
     #ifdef ONLY_FOR_LEX
         string s = "FLT\t\t\t\t"+char2str(yytext)+"\t\t\t\t"+to_string(yylineno);
         DEBUG_FOR_LAB4(s);
     #else
-        return OCTAL;
+        yylval.ftype = atoi(yytext);
+        return FLOATNUM;
     #endif 
 }
 
-{commentline} {
-    #ifdef ONLY_FOR_LEX
-        ;
-    #else
-        return COMMENTLINE;
-    #endif
-}
 
-{BLOCKCOMMENTBEGIN} {
-	#ifdef ONLY_FOR_LEX
-		BEGIN BLOCKCOMMENT; 
-		// fprintf(yyout,"Begin a comment:\n");
-	#else
-		return BLOCKCOMMENTBEGIN;
-	#endif
-	}
-<BLOCKCOMMENT>{BLOCKCOMMENTELEMENT} {
-	#ifdef ONLY_FOR_LEX
-		// fprintf(yyout,"%s",yytext);
-	#else
-		return BLOCKCOMMENTELEMENT;
-	#endif
-	}
-<BLOCKCOMMENT>{BLOCKCOMMENTEND} {
-	#ifdef ONLY_FOR_LEX
-		BEGIN INITIAL;
-		// fprintf(yyout,"%i",yylineno);
-		// fprintf(yyout,"\nthis comment End!\n");
-	#else
-		return BLOCKCOMMENTEND;
-	#endif
-	}
 
 
 {EOL} yylineno++;
 {WHITE}
+{COMMENT}
 %%
 
 #ifdef ONLY_FOR_LEX

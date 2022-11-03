@@ -2,8 +2,10 @@
 #define __AST_H__
 
 #include <fstream>
+#include <vector>
 
 class SymbolEntry;
+class Type;
 
 class Node
 {
@@ -16,13 +18,14 @@ public:
     virtual void output(int level) = 0;
 };
 
+// todo 考虑加一个const标志位来表示是否为常量表达式？
 class ExprNode : public Node
 {
 protected:
     SymbolEntry *symbolEntry;
 public:
     ExprNode(SymbolEntry *symbolEntry) : symbolEntry(symbolEntry){};
-    // Type* getType();
+    Type* getType();
 };
 
 class BinaryExpr : public ExprNode
@@ -33,6 +36,17 @@ private:
 public:
     enum {ADD, SUB, MUL, DIV, MOD, AND, OR, LESS, LESSEQ, GREAT, GREATEQ, EQUAL, NEQUAL};
     BinaryExpr(SymbolEntry *se, int op, ExprNode*expr1, ExprNode*expr2) : ExprNode(se), op(op), expr1(expr1), expr2(expr2){};
+    void output(int level);
+};
+
+class OneOpExpr : public ExprNode
+{
+private:
+    int op;
+    ExprNode *expr;
+public:
+    enum {SUB, NOT};
+    OneOpExpr(SymbolEntry *se, int op, ExprNode* expr): ExprNode(se), op(op), expr(expr){};
     void output(int level);
 };
 
@@ -61,6 +75,36 @@ public:
     void output(int level);
 };
 
+class ExprStmtNode : public StmtNode
+{
+private:
+    std::vector<ExprNode*> exprList;
+public:
+    ExprStmtNode(){};
+    void addNext(ExprNode* next);
+    void output(int level);
+};
+
+class FuncCallParamsNode : public StmtNode
+{
+private:
+    std::vector<ExprNode*> paramsList;
+public:
+    FuncCallParamsNode(){};
+    void addNext(ExprNode* next);
+    void output(int level);
+};
+
+class FuncCallNode : public ExprNode
+{
+private:
+    Id* funcId;
+    FuncCallParamsNode* params;
+public:
+    FuncCallNode(SymbolEntry *se, Id* id, FuncCallParamsNode* params) : ExprNode(se), funcId(id), params(params){};
+    void output(int level);
+};
+
 class CompoundStmt : public StmtNode
 {
 private:
@@ -75,22 +119,8 @@ class SeqNode : public StmtNode
 private:
     std::vector<StmtNode*> stmtList;
 public:
-    SeqNode(){}
+    SeqNode(){};
     void addNext(StmtNode* next);
-    void output(int level);
-};
-
-class DefNode : public StmtNode
-{
-private:
-    Id* id;
-    InitValNode* initVal;
-    bool isConst;
-    bool isArray;
-public:
-    DefNode(Id* id, InitValNode* initVal, bool isConst, bool isArray) : 
-        isConst(isConst), isArray(isArray), id(id), initVal(initVal){};
-    Id* getId() {return id;}
     void output(int level);
 };
 
@@ -103,6 +133,20 @@ private:
 public:
     InitValNode(bool isConst, bool isArray) : isConst(isConst), isArray(isArray){};
     void addNext(ExprNode* next);
+    void output(int level);
+};
+
+class DefNode : public StmtNode
+{
+private:
+    bool isConst;
+    bool isArray;
+    Id* id;
+    InitValNode* initVal;
+public:
+    DefNode(Id* id, InitValNode* initVal, bool isConst, bool isArray) : 
+        isConst(isConst), isArray(isArray), id(id), initVal(initVal){};
+    Id* getId() {return id;}
     void output(int level);
 };
 
@@ -138,6 +182,15 @@ public:
     void output(int level);
 };
 
+class WhileStmt : public StmtNode
+{
+private:
+    ExprNode *cond;
+    StmtNode *bodyStmt;
+public:
+    WhileStmt(ExprNode *cond, StmtNode *bodyStmt) : cond(cond), bodyStmt(bodyStmt){};
+    void output(int level);
+};
 
 class BreakStmt: public StmtNode
 {
@@ -146,20 +199,22 @@ public:
     void output(int level);
 };
 
-class ContinueStmt: public StmtNode
-{
-public:
-    ContinueStmt(){};
-    void output(int level);
-};
-
-
 class ReturnStmt : public StmtNode
 {
 private:
     ExprNode *retValue;
 public:
     ReturnStmt(ExprNode*retValue) : retValue(retValue) {};
+    void output(int level);
+};
+
+class EmptyReturnStmt : public StmtNode
+{
+private:
+    // ExprNode *retValue;
+    StmtNode * stmt;
+public:
+    EmptyReturnStmt(StmtNode* stmt) : stmt(stmt) {};
     void output(int level);
 };
 
@@ -187,30 +242,10 @@ class FunctionDef : public StmtNode
 {
 private:
     SymbolEntry *se;
-    StmtNode *stmt;
     FuncDefParamsNode *params;
+    StmtNode *stmt;
 public:
-    FunctionDef(SymbolEntry *se, FuncDefParamsNode *params, StmtNode *stmt) : se(se),  params(params), stmt(stmt){};
-    void output(int level);
-};
-
-class FuncCallParamsNode : public StmtNode
-{
-private:
-    std::vector<ExprNode*> paramsList;
-public:
-    FuncCallParamsNode(){};
-    void addNext(ExprNode* next);
-    void output(int level);
-};
-
-class FuncCallNode : public ExprNode
-{
-private:
-    Id* funcId;
-    FuncCallParamsNode* params;
-public:
-    FuncCallNode(SymbolEntry *se, Id* id, FuncCallParamsNode* params) : ExprNode(se), funcId(id), params(params){};
+    FunctionDef(SymbolEntry *se, FuncDefParamsNode *params, StmtNode *stmt) : se(se), params(params), stmt(stmt){};
     void output(int level);
 };
 

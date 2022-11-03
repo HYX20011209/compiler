@@ -34,7 +34,7 @@
 %token LPAREN RPAREN LBRACK RBRACK LBRACE RBRACE SEMICOLON COMMA
 %token ADD SUB MUL DIV MOD AND OR NOT LESS LESSEQ GREAT GREATEQ EQUAL NEQUAL ASSIGN
 
-%type <stmttype> Stmts Stmt AssignStmt BlockStmt ExpStmt IfStmt WhileStmt BreakStmt ContinueStmt ReturnStmt 
+%type <stmttype> Stmts Stmt AssignStmt BlockStmt ExpStmt IfStmt WhileStmt BreakStmt  ReturnStmt 
 %type <stmttype> DeclStmt ConstDefList ConstDef ConstInitVal VarDefList VarDef VarInitVal FuncDef FuncParams FuncParam FuncRParams
 %type <exprtype> Exp ConstExp AddExp MulExp UnaryExp Cond LOrExp PrimaryExp LVal RelExp EqExp LAndExp
 %type <type> Type
@@ -76,6 +76,7 @@ Stmt
     | IfStmt {$$=$1;}
     | WhileStmt {$$=$1;}
     | BreakStmt {$$=$1;}
+    /* | ContinueStmt {$$=$1;} */
     | ReturnStmt {$$=$1;}
     | DeclStmt {$$=$1;}
     | FuncDef {$$=$1;}
@@ -163,12 +164,12 @@ BreakStmt
     ;
 
 //continue 语句
-ContinueStmt
+/* ContinueStmt
     :   CONTINUE SEMICOLON{
             // std::cout << "ContinueStmt -> CONTINUE SEMICOLON" << std::endl;
-            $$ = new ContinueStmt;
+            $$ = new ContinueStmt();
         }
-    ;
+    ; */
 
 
 ReturnStmt
@@ -591,9 +592,9 @@ FuncDef
         se = identifiers->lookup($2);
         assert(se != nullptr);
         $$ = new FunctionDef(se, (FuncDefParamsNode*)$5, $7);
-        // SymbolTable *top = identifiers;
+        SymbolTable *top = identifiers;
         identifiers = identifiers->getPrev();
-        // delete top;
+        delete top;
         delete []$2;
     }
     ;
