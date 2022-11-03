@@ -30,7 +30,7 @@
 %token <ftype> FLOATNUM
 %token IF ELSE WHILE BREAK CONTINUE RETURN
 %token INT VOID FLOAT
-%token LPAREN RPAREN LBRACK RBRACK LBRACE RBRACE SEMICOLON
+%token LPAREN RPAREN LBRACK RBRACK LBRACE RBRACE SEMICOLON COMMA
 %token ADD SUB MUL DIV MOD AND OR NOT LESS LESSEQ GREAT GREATEQ EQUAL NEQUAL ASSIGN
 
 %type <stmttype> Stmts Stmt AssignStmt BlockStmt ExpStmt IfStmt WhileStmt BreakStmt ContinueStmt ReturnStmt 
@@ -82,6 +82,9 @@ Stmt
     ;
 LVal
     : ID {
+        //识别到标识符就创建一个符号表项指针，并通过全局符号表指针
+        //identifiers查找对应的标识符。没找到就打印错误信息
+        //找到就创建一个Id节点类（继承自ExprNode）
         SymbolEntry *se;
         se = identifiers->lookup($1);
         if(se == nullptr)
@@ -93,32 +96,45 @@ LVal
         $$ = new Id(se);
         delete []$1;
     }
+    //数组左值
     ;
 AssignStmt
     :
-    LVal ASSIGN Exp SEMICOLON {
-        $$ = new AssignStmt($1, $3);
-    }
+        LVal ASSIGN Exp SEMICOLON {
+            $$ = new AssignStmt($1, $3);
+        }
     ;
+
+// 表达式语句
+ExpStmt
+    :   ExpStmt COMMA Exp {
+            ExprStmtNode* node = (ExprStmtNode*)$1;
+            node->addNext($3);
+            $$ = node;
+        }
+    |   Exp {
+            ExprStmtNode* node = new ExprStmtNode();
+            node->addNext($1);
+            $$ = node;
+        }
+    ;
+
+
 BlockStmt
     :   LBRACE 
+        //遇到语句块左大括号就创建符号表，这时新的符号表是原来的后一级
         {identifiers = new SymbolTable(identifiers);}
         Stmts RBRACE 
         {
             $$ = new CompoundStmt($3);
             // SymbolTable *top = identifiers;
+            //由于全局符号表，因此需要通过前向指针使之保持原有位置
             identifiers = identifiers->getPrev();
             // delete top;
         }
-    |   LBRACE 
-        {identifiers = new SymbolTable(identifiers);} 
-        RBRACE 
+    |   LBRACE RBRACE 
         {
-            EmptyStmt* tmpNode = new EmptyStmt();
-            $$ = new CompoundStmt(tmpNode);
-            // SymbolTable *top = identifiers;
-            identifiers = identifiers->getPrev();
-            // delete top;
+            $$ = new CompoundStmt(nullptr);
         }
     ;
 IfStmt
@@ -129,16 +145,58 @@ IfStmt
         $$ = new IfElseStmt($3, $5, $7);
     }
     ;
+
+//while 语句
+WhileStmt
+    :   WHILE LPAREN Cond RPAREN Stmt {
+            $$ = new WhileStmt($3,$5);
+        }
+    ;
+
+//break 语句
+BreakStmt
+    :   BREAK SEMICOLON {
+            //std::cout << "BreakStmt -> BREAK SEMICOLON" << std::endl;
+            $$ = new BreakStmt();
+        }
+    ;
+
+//continue 语句
+ContinueStmt
+    :   CONTINUE SEMICOLON{
+            // std::cout << "ContinueStmt -> CONTINUE SEMICOLON" << std::endl;
+            $$ = new ContinueStmt;
+        }
+    ;
+
+
 ReturnStmt
     :
-    RETURN Exp SEMICOLON{
-        $$ = new ReturnStmt($2);
-    }
+        RETURN Exp SEMICOLON{
+            $$ = new ReturnStmt($2);
+        }
+    |   RETURN SEMICOLON {
+            // std::cout << "ReturnStmt -> RETURN SEMICOLON" << std::endl;
+            $$ = new ReturnStmt(nullptr);
+        }
     ;
+
+//变量表达式
 Exp
     :
-    AddExp {$$ = $1;}
+        AddExp {$$ = $1;}
     ;
+
+
+// 常量表达式
+ConstExp
+    :   AddExp {
+            $$ = $1;
+        }
+    ;
+
+
+
 Cond
     :
     LOrExp {$$ = $1;}

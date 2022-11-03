@@ -67,7 +67,12 @@ void Id::output(int level)
 void CompoundStmt::output(int level)
 {
     fprintf(yyout, "%*cCompoundStmt\n", level, ' ');
-    stmt->output(level + 4);
+    if(stmt == nullptr){
+        fprintf(yyout, "%*cNull Stmt\n", level+4, ' ');
+    }
+    else{
+        stmt->output(level + 4);
+    }
 }
 
 void SeqNode::addNext(StmtNode* next)
@@ -105,10 +110,26 @@ void IfElseStmt::output(int level)
     elseStmt->output(level + 4);
 }
 
+void BreakStmt::output(int level)
+{
+    fprintf(yyout, "%*cBreak Stmt\n", level, ' ');
+}
+
+void ContinueStmt::output(int level)
+{
+    fprintf(yyout, "%*cContinue Stmt\n", level, ' ');
+}
+
 void ReturnStmt::output(int level)
 {
     fprintf(yyout, "%*cReturnStmt\n", level, ' ');
-    retValue->output(level + 4);
+    if(retValue == nullptr){
+        fprintf(yyout, "%*cNull Stmt\n", level+4, ' ');
+    }
+    else{
+        retValue->output(level + 4);
+    }
+    // retValue->output(level + 4);
 }
 
 void AssignStmt::output(int level)

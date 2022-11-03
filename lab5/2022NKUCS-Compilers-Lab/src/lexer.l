@@ -363,6 +363,14 @@ commentline "//".*
         return SEMICOLON;
     #endif
 }
+"," {
+    #ifdef ONLY_FOR_LEX
+        string s = "COMMA\t\t\t\t,\t\t\t\t"+to_string(yylineno);
+        DEBUG_FOR_LAB4("COMMA", ",");
+    #else
+        return COMMA;
+    #endif
+}
 "(" {
     #ifdef ONLY_FOR_LEX
         string s = "LPAREN\t\t\t\t(\t\t\t\t"+to_string(yylineno);

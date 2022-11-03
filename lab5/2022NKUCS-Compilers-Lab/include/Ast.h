@@ -22,6 +22,7 @@ protected:
     SymbolEntry *symbolEntry;
 public:
     ExprNode(SymbolEntry *symbolEntry) : symbolEntry(symbolEntry){};
+    // Type* getType();
 };
 
 class BinaryExpr : public ExprNode
@@ -46,6 +47,7 @@ class Id : public ExprNode
 {
 public:
     Id(SymbolEntry *se) : ExprNode(se){};
+    SymbolEntry* getSymbolEntry() {return symbolEntry;}
     void output(int level);
 };
 
@@ -107,6 +109,22 @@ public:
     IfElseStmt(ExprNode *cond, StmtNode *thenStmt, StmtNode *elseStmt) : cond(cond), thenStmt(thenStmt), elseStmt(elseStmt) {};
     void output(int level);
 };
+
+
+class BreakStmt: public StmtNode
+{
+public:
+    BreakStmt(){};
+    void output(int level);
+};
+
+class ContinueStmt: public StmtNode
+{
+public:
+    ContinueStmt(){};
+    void output(int level);
+};
+
 
 class ReturnStmt : public StmtNode
 {
