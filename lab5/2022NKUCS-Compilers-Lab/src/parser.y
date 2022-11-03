@@ -196,6 +196,130 @@ ConstExp
     ;
 
 
+/* 
+    Symbol entry for temporary variable created by compiler. Example:
+
+    int a;
+    a = 1 + 2 + 3;
+
+    The compiler would generate intermediate code like:
+
+    t1 = 1 + 2
+    t2 = t1 + 3
+    a = t2
+
+    So compiler should create temporary symbol entries for t1 and t2:
+
+    | temporary variable | label |
+    | t1                 | 1     |
+    | t2                 | 2     |
+
+class TemporarySymbolEntry : public SymbolEntry
+{
+private:
+    int label;
+public:
+    TemporarySymbolEntry(Type *type, int label);
+    virtual ~TemporarySymbolEntry() {};
+    std::string toStr();
+};
+*/
+
+AddExp
+    :   MulExp {
+            $$ = $1;
+        }
+    |   AddExp ADD MulExp {
+            SymbolEntry *se;
+            //只要有一个是float那么就应该创建float类型的表项
+            if($1->getType()->isInt() && $3->getType()->isInt()){
+                se = new TemporarySymbolEntry(TypeSystem::intType, SymbolTable::getLabel());
+            }
+            else{
+                se = new TemporarySymbolEntry(TypeSystem::floatType, SymbolTable::getLabel());
+            }
+            $$ = new BinaryExpr(se, BinaryExpr::ADD, $1, $3);
+        }
+    |   AddExp SUB MulExp {
+            SymbolEntry *se;
+            if($1->getType()->isInt() && $3->getType()->isInt()){
+                se = new TemporarySymbolEntry(TypeSystem::intType, SymbolTable::getLabel());
+            }
+            else{
+                se = new TemporarySymbolEntry(TypeSystem::floatType, SymbolTable::getLabel());
+            }
+            $$ = new BinaryExpr(se, BinaryExpr::SUB, $1, $3);
+        }
+    ;
+
+MulExp
+    :   UnaryExp {
+            $$ = $1;
+        }
+    |   MulExp MUL UnaryExp {
+            SymbolEntry *se;
+            if($1->getType()->isInt() && $3->getType()->isInt()){
+                se = new TemporarySymbolEntry(TypeSystem::intType, SymbolTable::getLabel());
+            }
+            else{
+                se = new TemporarySymbolEntry(TypeSystem::floatType, SymbolTable::getLabel());
+            }
+            $$ = new BinaryExpr(se, BinaryExpr::MUL, $1, $3);
+        }
+    |   MulExp DIV UnaryExp {
+            SymbolEntry *se;
+            if($1->getType()->isInt() && $3->getType()->isInt()){
+                se = new TemporarySymbolEntry(TypeSystem::intType, SymbolTable::getLabel());
+            }
+            else{
+                se = new TemporarySymbolEntry(TypeSystem::floatType, SymbolTable::getLabel());
+            }
+            $$ = new BinaryExpr(se, BinaryExpr::DIV, $1, $3);
+        }
+    |   MulExp MOD UnaryExp {
+            SymbolEntry *se;
+            if($1->getType()->isInt() && $3->getType()->isInt()){
+                se = new TemporarySymbolEntry(TypeSystem::intType, SymbolTable::getLabel());
+            }
+            else{
+                se = new TemporarySymbolEntry(TypeSystem::floatType, SymbolTable::getLabel());
+            }
+            $$ = new BinaryExpr(se, BinaryExpr::MOD, $1, $3);
+        }
+
+
+
+// 非数组表达式
+UnaryExp
+    :   PrimaryExp {
+            $$ = $1;
+        }
+    |   ID LPAREN FuncRParams RPAREN {//函数调用表达式，例如a = b + f(x)中的"f(x)""
+            SymbolEntry *se;
+            se = identifiers->lookup($1);
+            if(se == nullptr)
+            {
+                fprintf(stderr, "identifier \"%s\" is undefined\n", (char*)$1);
+                delete [](char*)$1;
+                assert(se != nullptr);
+            }
+            SymbolEntry *tmp = new TemporarySymbolEntry(se->getType(), SymbolTable::getLabel());
+            $$ = new FuncCallNode(tmp, new Id(se), (FuncCallParamsNode*)$3);
+        }
+    |   ADD UnaryExp {
+            $$ = $2;
+        }
+    |   SUB UnaryExp {
+            SymbolEntry *tmp = new TemporarySymbolEntry($2->getType(), SymbolTable::getLabel());
+            $$ = new OneOpExpr(tmp, OneOpExpr::SUB, $2);
+        }
+    |   NOT UnaryExp {
+            SymbolEntry *tmp = new TemporarySymbolEntry($2->getType(), SymbolTable::getLabel());
+            $$ = new OneOpExpr(tmp, OneOpExpr::NOT, $2);
+        }
+    ;
+
+
 
 Cond
     :
@@ -211,22 +335,7 @@ PrimaryExp
         $$ = new Constant(se);
     }
     ;
-AddExp
-    :
-    PrimaryExp {$$ = $1;}
-    |
-    AddExp ADD PrimaryExp
-    {
-        SymbolEntry *se = new TemporarySymbolEntry(TypeSystem::intType, SymbolTable::getLabel());
-        $$ = new BinaryExpr(se, BinaryExpr::ADD, $1, $3);
-    }
-    |
-    AddExp SUB PrimaryExp
-    {
-        SymbolEntry *se = new TemporarySymbolEntry(TypeSystem::intType, SymbolTable::getLabel());
-        $$ = new BinaryExpr(se, BinaryExpr::SUB, $1, $3);
-    }
-    ;
+
 RelExp
     :
     AddExp {$$ = $1;}

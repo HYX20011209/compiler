@@ -31,7 +31,7 @@ private:
     int op;
     ExprNode *expr1, *expr2;
 public:
-    enum {ADD, SUB, AND, OR, LESS};
+    enum {ADD, SUB, MUL, DIV, MOD, AND, OR, LESS, LESSEQ, GREAT, GREATEQ, EQUAL, NEQUAL};
     BinaryExpr(SymbolEntry *se, int op, ExprNode*expr1, ExprNode*expr2) : ExprNode(se), op(op), expr1(expr1), expr2(expr2){};
     void output(int level);
 };
@@ -152,6 +152,26 @@ private:
     StmtNode *stmt;
 public:
     FunctionDef(SymbolEntry *se, StmtNode *stmt) : se(se), stmt(stmt){};
+    void output(int level);
+};
+
+class FuncCallParamsNode : public StmtNode
+{
+private:
+    std::vector<ExprNode*> paramsList;
+public:
+    FuncCallParamsNode(){};
+    void addNext(ExprNode* next);
+    void output(int level);
+};
+
+class FuncCallNode : public ExprNode
+{
+private:
+    Id* funcId;
+    FuncCallParamsNode* params;
+public:
+    FuncCallNode(SymbolEntry *se, Id* id, FuncCallParamsNode* params) : ExprNode(se), funcId(id), params(params){};
     void output(int level);
 };
 

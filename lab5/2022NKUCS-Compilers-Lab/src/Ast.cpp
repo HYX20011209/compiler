@@ -153,3 +153,34 @@ void EmptyStmt::output(int levle)
 {
     fprintf(yyout,"%*cEmptyStmt\n", level, ' ');
 }
+
+void FuncCallNode::output(int level)
+{
+    std::string name, type;
+    int scope;
+    SymbolEntry* funcEntry = funcId->getSymbolEntry();
+    name = funcEntry->toStr();
+    type = funcEntry->getType()->toStr();
+    scope = dynamic_cast<IdentifierSymbolEntry*>(funcEntry)->getScope();
+    fprintf(yyout, "%*cFuncCallNode\tfuncName: %s\t funcType: %s\tscope: %d\n", 
+            level, ' ', name.c_str(), type.c_str(), scope);
+    if(params!=nullptr){
+        params->output(level+4);
+    }
+    else{
+        fprintf(yyout, "%*cFuncCallParamsNode NULL\n", level+4, ' ');
+    }
+}
+
+void FuncCallParamsNode::addNext(ExprNode* next)
+{
+    paramsList.push_back(next);
+}
+
+void FuncCallParamsNode::output(int level)
+{
+    fprintf(yyout, "%*cFuncCallParamsNode\n", level, ' ');
+    for(auto param : paramsList){
+        param->output(level+4);
+    }
+}
