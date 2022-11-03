@@ -253,6 +253,11 @@ void BreakStmt::output(int level)
     fprintf(yyout, "%*cBreak Stmt\n", level, ' ');
 }
 
+void ContinueStmt::output(int level)
+{
+    fprintf(yyout, "%*cContinue Stmt\n", level, ' ');
+}
+
 void ReturnStmt::output(int level)
 {
     fprintf(yyout, "%*cReturnStmt\n", level, ' ');
@@ -262,7 +267,6 @@ void ReturnStmt::output(int level)
     else{
         retValue->output(level + 4);
     }
-    // retValue->output(level + 4);
 }
 
 void AssignStmt::output(int level)

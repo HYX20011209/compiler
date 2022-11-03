@@ -199,6 +199,13 @@ public:
     void output(int level);
 };
 
+class ContinueStmt: public StmtNode
+{
+public:
+    ContinueStmt(){};
+    void output(int level);
+};
+
 class ReturnStmt : public StmtNode
 {
 private:
@@ -208,15 +215,15 @@ public:
     void output(int level);
 };
 
-class EmptyReturnStmt : public StmtNode
-{
-private:
-    // ExprNode *retValue;
-    StmtNode * stmt;
-public:
-    EmptyReturnStmt(StmtNode* stmt) : stmt(stmt) {};
-    void output(int level);
-};
+// class EmptyReturnStmt : public StmtNode
+// {
+// private:
+//     // ExprNode *retValue;
+//     StmtNode * stmt;
+// public:
+//     EmptyReturnStmt(StmtNode* stmt) : stmt(stmt) {};
+//     void output(int level);
+// };
 
 class AssignStmt : public StmtNode
 {

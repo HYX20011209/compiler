@@ -5,7 +5,7 @@
     extern Ast ast;
     int yylex();
     int yyerror( char const * );
-
+    // 当前类型
     Type* currentType;
 }
 
@@ -50,12 +50,13 @@ Program
         }
     ;
 
-// 语句序列
 Stmts
     :   Stmts Stmt{
-            SeqNode* node = (SeqNode*)$1;
-            node->addNext((StmtNode*)$2);
-            $$ = (StmtNode*) node;
+            //这里需要注意的是递归推导出的每个Stmts都是同一个节点，
+            //但拆分出的Stmt会被自下而上的压入vector
+            SeqNode* node = (SeqNode*)$1; //创建一个SeqNode类型节点指针，赋值为Stmts
+            node->addNext((StmtNode*)$2);//将Stmt放入该节点的vector中
+            $$ = (StmtNode*) node;//将识别到的Stmts赋值为该节点（指针）
         }
     |   Stmt{
             SeqNode* node = new SeqNode();
@@ -79,23 +80,24 @@ Stmt
     |   SEMICOLON {$$ = new EmptyStmt();}
     ;
 
-// 左值
 LVal
-    :   ID {
-            SymbolEntry *se;
-            se = identifiers->lookup($1);
-            if(se == nullptr)
-            {
-                fprintf(stderr, "identifier \"%s\" is undefined\n", (char*)$1);
-                delete [](char*)$1;
-                assert(se != nullptr);
-            }
-            $$ = new Id(se);
-            delete []$1;
+    : ID {
+        //识别到标识符就创建一个符号表项指针，并通过全局符号表指针
+        //identifiers查找对应的标识符。没找到就打印错误信息
+        //找到就创建一个Id节点类（继承自ExprNode）
+        SymbolEntry *se;
+        se = identifiers->lookup($1);
+        if(se == nullptr)
+        {
+            fprintf(stderr, "identifier \"%s\" is undefined\n", (char*)$1);
+            delete [](char*)$1;
+            assert(se != nullptr);
         }
-    // 缺少数组的左值
+        $$ = new Id(se);
+        delete []$1;
+    }
+    //数组左值
     ;
-
 // 赋值语句
 AssignStmt
     :   LVal ASSIGN Exp SEMICOLON {
@@ -117,21 +119,24 @@ ExpStmt
         }
     ;
 
-// 语句快
 BlockStmt
-    :   LBRACE {
-            identifiers = new SymbolTable(identifiers);
-        } 
-        Stmts RBRACE {
+    :   LBRACE 
+        //遇到语句块左大括号就创建符号表，这时新的符号表是原来的后一级
+        {identifiers = new SymbolTable(identifiers);}
+        Stmts RBRACE 
+        {
             $$ = new CompoundStmt($3);
             // SymbolTable *top = identifiers;
+            //由于全局符号表，因此需要通过前向指针使之保持原有位置
             identifiers = identifiers->getPrev();
             // delete top;
         }
-    |   LBRACE RBRACE {
+    |   LBRACE RBRACE 
+        {
             $$ = new CompoundStmt(nullptr);
         }
     ;
+
 
 // if语句
 IfStmt
@@ -153,7 +158,6 @@ WhileStmt
 //todo break 语句
 BreakStmt
     :   BREAK SEMICOLON {
-            //std::cout << "BreakStmt -> BREAK SEMICOLON" << std::endl;
             $$ = new BreakStmt();
         }
     ;
@@ -161,7 +165,7 @@ BreakStmt
 //todo continue 语句
 ContinueStmt
     :   CONTINUE SEMICOLON{
-            std::cout << "ContinueStmt -> CONTINUE SEMICOLON" << std::endl;
+            $$ = new ContinueStmt();
         }
     ;
 
@@ -191,13 +195,49 @@ ConstExp
         }
     ;
 
-// 加法级表达式
+
+
+
+
+
+/* 
+    Symbol entry for temporary variable created by compiler. Example:
+
+    int a;
+    a = 1 + 2 + 3;
+
+    The compiler would generate intermediate code like:
+
+    t1 = 1 + 2
+    t2 = t1 + 3
+    a = t2
+
+    So compiler should create temporary symbol entries for t1 and t2:
+
+    | temporary variable | label |
+    | t1                 | 1     |
+    | t2                 | 2     |
+
+class TemporarySymbolEntry : public SymbolEntry
+{
+private:
+    int label;
+public:
+    TemporarySymbolEntry(Type *type, int label);
+    virtual ~TemporarySymbolEntry() {};
+    std::string toStr();
+};
+*/
+
+
+
 AddExp
     :   MulExp {
             $$ = $1;
         }
     |   AddExp ADD MulExp {
             SymbolEntry *se;
+            //只要有一个是float那么就应该创建float类型的表项
             if($1->getType()->isInt() && $3->getType()->isInt()){
                 se = new TemporarySymbolEntry(TypeSystem::intType, SymbolTable::getLabel());
             }
@@ -260,7 +300,7 @@ UnaryExp
     :   PrimaryExp {
             $$ = $1;
         }
-    |   ID LPAREN FuncRParams RPAREN {
+    |   ID LPAREN FuncRParams RPAREN {//函数调用表达式，例如a = b + f(x)中的"f(x)""
             SymbolEntry *se;
             se = identifiers->lookup($1);
             if(se == nullptr)
@@ -285,7 +325,26 @@ UnaryExp
         }
     ;
 
-// 原始表达式
+/*  
+    Symbol entry for literal constant. Example:
+
+    int a = 1;
+
+    Compiler should create constant symbol entry for literal constant '1'.
+
+class ConstantSymbolEntry : public SymbolEntry
+{
+private:
+    int value;
+
+public:
+    ConstantSymbolEntry(Type *type, int value);
+    virtual ~ConstantSymbolEntry() {};
+    int getValue() const {return value;};
+    std::string toStr();
+    // You can add any function you need here.
+};
+*/
 PrimaryExp
     :   LVal {
             $$ = $1;
@@ -389,6 +448,7 @@ RelExp
 Type
     :   TYPE_INT {
             $$ = TypeSystem::intType;
+            //例如读取到"int a"，就把currentType设置为int
             currentType = TypeSystem::intType;
         }
     |   TYPE_FLOAT {
@@ -427,7 +487,7 @@ ConstDefList
 // 常量定义
 ConstDef
     :   ID ASSIGN ConstInitVal {
-            // 首先将ID插入符号表中
+            // 将ID插入符号表中
             Type* type;
             if(currentType->isInt()){
                 type = TypeSystem::constIntType;
@@ -470,7 +530,6 @@ VarDefList
 // 变量定义
 VarDef
     :   ID {
-            // 首先将ID插入符号表中
             Type* type;
             if(currentType->isInt()){
                 type = TypeSystem::intType;
@@ -484,7 +543,6 @@ VarDef
             $$ = new DefNode(new Id(se), nullptr, false, false);
         }
     |   ID ASSIGN VarInitVal {
-            // 首先将ID插入符号表中
             Type* type;
             if(currentType->isInt()){
                 type = TypeSystem::intType;
