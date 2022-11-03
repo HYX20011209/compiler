@@ -1,4 +1,3 @@
-//comment2222
 %code top{
     #include <iostream>
     #include <assert.h>
@@ -6,6 +5,8 @@
     extern Ast ast;
     int yylex();
     int yyerror( char const * );
+    // 当前类型
+    Type* currentType;
 }
 
 %code requires {
@@ -26,6 +27,7 @@
 %start Program
 %token <strtype> ID 
 %token <itype> INTEGER
+%token <ftype> FLOATNUM
 %token IF ELSE
 %token INT VOID
 %token LPAREN RPAREN LBRACE RBRACE SEMICOLON
