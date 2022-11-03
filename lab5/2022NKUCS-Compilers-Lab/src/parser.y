@@ -29,7 +29,7 @@
 %token <itype> INTEGER
 %token <ftype> FLOATNUM
 %token IF ELSE WHILE BREAK CONTINUE RETURN
-%token INT VOID FLOAT
+%token INT_TYPE VOID_TYPE FLOAT_TYPE
 %token LPAREN RPAREN LBRACK RBRACK LBRACE RBRACE SEMICOLON COMMA
 %token ADD SUB MUL DIV MOD AND OR NOT LESS LESSEQ GREAT GREATEQ EQUAL NEQUAL ASSIGN
 
@@ -319,61 +319,150 @@ UnaryExp
         }
     ;
 
+/*  
+    Symbol entry for literal constant. Example:
+
+    int a = 1;
+
+    Compiler should create constant symbol entry for literal constant '1'.
+
+class ConstantSymbolEntry : public SymbolEntry
+{
+private:
+    int value;
+
+public:
+    ConstantSymbolEntry(Type *type, int value);
+    virtual ~ConstantSymbolEntry() {};
+    int getValue() const {return value;};
+    std::string toStr();
+    // You can add any function you need here.
+};
+*/
+// 原始表达式
+PrimaryExp
+    :   LVal {
+            $$ = $1;
+        }
+    |   LPAREN Exp RPAREN {
+            $$ = $2;
+        }
+    |   INTEGER {
+            SymbolEntry *se = new ConstantSymbolEntry(TypeSystem::intType, $1);
+            $$ = new Constant(se);
+        }
+    |   FLOATNUM {
+            SymbolEntry *se = new ConstantSymbolEntry(TypeSystem::floatType, $1);
+            $$ = new Constant(se);
+        }
+    ;
+
+
+
+// 函数参数列表
+FuncRParams
+    :   FuncRParams COMMA Exp {
+            FuncCallParamsNode* node = (FuncCallParamsNode*) $1;
+            node->addNext($3);
+            $$ = node;
+        }
+    |   Exp {
+            FuncCallParamsNode* node = new FuncCallParamsNode();
+            node->addNext($1);
+            $$ = node;
+        }
+    |   %empty {
+            $$ = nullptr;
+        }
+    ;
+
+
 
 
 Cond
     :
-    LOrExp {$$ = $1;}
-    ;
-PrimaryExp
-    :
-    LVal {
-        $$ = $1;
-    }
-    | INTEGER {
-        SymbolEntry *se = new ConstantSymbolEntry(TypeSystem::intType, $1);
-        $$ = new Constant(se);
-    }
+        LOrExp {$$ = $1;}
     ;
 
-RelExp
-    :
-    AddExp {$$ = $1;}
-    |
-    RelExp LESS AddExp
-    {
-        SymbolEntry *se = new TemporarySymbolEntry(TypeSystem::intType, SymbolTable::getLabel());
-        $$ = new BinaryExpr(se, BinaryExpr::LESS, $1, $3);
-    }
-    ;
-LAndExp
-    :
-    RelExp {$$ = $1;}
-    |
-    LAndExp AND RelExp
-    {
-        SymbolEntry *se = new TemporarySymbolEntry(TypeSystem::intType, SymbolTable::getLabel());
-        $$ = new BinaryExpr(se, BinaryExpr::AND, $1, $3);
-    }
-    ;
+
 LOrExp
     :
     LAndExp {$$ = $1;}
     |
     LOrExp OR LAndExp
     {
-        SymbolEntry *se = new TemporarySymbolEntry(TypeSystem::intType, SymbolTable::getLabel());
+        SymbolEntry *se = new TemporarySymbolEntry(TypeSystem::boolType, SymbolTable::getLabel());
         $$ = new BinaryExpr(se, BinaryExpr::OR, $1, $3);
     }
     ;
-Type
-    : INT {
-        $$ = TypeSystem::intType;
+
+LAndExp
+    :
+    EqExp {$$ = $1;}
+    |
+    LAndExp AND EqExp
+    {
+        SymbolEntry *se = new TemporarySymbolEntry(TypeSystem::boolType, SymbolTable::getLabel());
+        $$ = new BinaryExpr(se, BinaryExpr::AND, $1, $3);
     }
-    | VOID {
+   
+// 相等判断表达式
+EqExp
+    :   RelExp {
+            $$ = $1;
+        }
+    |   EqExp EQUAL RelExp {
+            SymbolEntry* se = new TemporarySymbolEntry(TypeSystem::boolType, SymbolTable::getLabel());
+            $$ = new BinaryExpr(se, BinaryExpr::EQUAL, $1, $3);
+        }
+    |   EqExp NEQUAL RelExp {
+            SymbolEntry* se = new TemporarySymbolEntry(TypeSystem::boolType, SymbolTable::getLabel());
+            $$ = new BinaryExpr(se, BinaryExpr::NEQUAL, $1, $3);
+        }
+    ;
+
+
+
+
+// 关系表达式
+RelExp
+    :   AddExp {
+            $$ = $1;
+        }
+    |   RelExp LESS AddExp {
+            SymbolEntry *se = new TemporarySymbolEntry(TypeSystem::boolType, SymbolTable::getLabel());
+            $$ = new BinaryExpr(se, BinaryExpr::LESS, $1, $3);
+        }
+    |   RelExp LESSEQ AddExp {
+            SymbolEntry *se = new TemporarySymbolEntry(TypeSystem::boolType, SymbolTable::getLabel());
+            $$ = new BinaryExpr(se, BinaryExpr::LESSEQ, $1, $3);
+        }
+    |   RelExp GREAT AddExp {
+            SymbolEntry *se = new TemporarySymbolEntry(TypeSystem::boolType, SymbolTable::getLabel());
+            $$ = new BinaryExpr(se, BinaryExpr::GREAT, $1, $3);
+        }
+    |   RelExp GREATEQ AddExp {
+            SymbolEntry *se = new TemporarySymbolEntry(TypeSystem::boolType, SymbolTable::getLabel());
+            $$ = new BinaryExpr(se, BinaryExpr::GREATEQ, $1, $3);
+        }
+    ;
+
+
+Type
+    : INT_TYPE {
+        $$ = TypeSystem::intType;
+        currentType = TypeSystem::intType;
+    }
+    | FLOAT_TYPE{
+        $$ = TypeSystem::floatType;
+        currentType = TypeSystem::floatType;
+    }
+    | VOID_TYPE {
         $$ = TypeSystem::voidType;
     }
     ;
+
+
 DeclStmt
     :
     Type ID SEMICOLON {

@@ -161,7 +161,9 @@ void FuncCallNode::output(int level)
     SymbolEntry* funcEntry = funcId->getSymbolEntry();
     name = funcEntry->toStr();
     type = funcEntry->getType()->toStr();
+
     scope = dynamic_cast<IdentifierSymbolEntry*>(funcEntry)->getScope();
+    //分别得到函数名、函数返回类型以及作用域级别
     fprintf(yyout, "%*cFuncCallNode\tfuncName: %s\t funcType: %s\tscope: %d\n", 
             level, ' ', name.c_str(), type.c_str(), scope);
     if(params!=nullptr){
