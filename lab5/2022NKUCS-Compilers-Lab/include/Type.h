@@ -8,15 +8,16 @@ class Type
 private:
     int kind;
 protected:
-    enum {INT, CONST_INT, FLOAT, CONST_FLOAT, VOID, BOOL, FUNC};
+    enum {INT, FLOAT, CONST_INT, CONST_FLOAT, VOID, BOOL, FUNC};
 public:
     Type(int kind) : kind(kind) {};
     virtual ~Type() {};
     virtual std::string toStr() = 0;
     bool isInt() const {return kind == INT;};
-    bool isConstInt() const {return kind == CONST_INT;};
     bool isFloat() const {return kind == FLOAT;};
-    bool isConstFloat() const {return kind == CONST_FLOAT;};
+    bool isConstInt() const {return kind == CONST_INT;}
+    bool isConstFloat() const {return kind == CONST_FLOAT;}
+    bool isBool() const {return kind == BOOL;}
     bool isVoid() const {return kind == VOID;};
     bool isFunc() const {return kind == FUNC;};
 };
@@ -64,6 +65,7 @@ public:
     VoidType() : Type(Type::VOID){};
     std::string toStr();
 };
+
 
 class FunctionType : public Type
 {

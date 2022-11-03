@@ -1,8 +1,8 @@
+#include <iostream>
+#include <string>
 #include "Ast.h"
 #include "SymbolTable.h"
-#include <string>
 #include "Type.h"
-#include<iostream>
 
 extern FILE *yyout;
 int Node::counter = 0;
@@ -17,6 +17,11 @@ void Ast::output()
     fprintf(yyout, "program\n");
     if(root != nullptr)
         root->output(4);
+}
+
+Type* ExprNode::getType()
+{
+    return symbolEntry->getType();
 }
 
 void BinaryExpr::output(int level)
@@ -57,16 +62,30 @@ void BinaryExpr::output(int level)
         case GREATEQ:
             op_str = "greateq";
             break;
-        case EQUAL:
+        case EQ:
             op_str = "eq";
             break;
-        case NEQUAL:
+        case NEQ:
             op_str = "neq";
             break;
     }
     fprintf(yyout, "%*cBinaryExpr\top: %s\ttype: %s\n", level, ' ', op_str.c_str(), symbolEntry->getType()->toStr().c_str());
     expr1->output(level + 4);
     expr2->output(level + 4);
+}
+
+void OneOpExpr::output(int level) {
+    std::string op_str;
+    switch (op) {
+        case NOT:
+            op_str = "not";
+            break;
+        case SUB:
+            op_str = "minus";
+            break;
+    }
+    fprintf(yyout, "%*cOneOpExpr\top: %s\ttype: %s\n", level, ' ', op_str.c_str(), symbolEntry->getType()->toStr().c_str());
+    expr->output(level + 4);
 }
 
 void Constant::output(int level)
@@ -89,102 +108,23 @@ void Id::output(int level)
             name.c_str(), scope, type.c_str());
 }
 
-void CompoundStmt::output(int level)
-{
-    fprintf(yyout, "%*cCompoundStmt\n", level, ' ');
-    if(stmt == nullptr){
-        fprintf(yyout, "%*cNull Stmt\n", level+4, ' ');
-    }
-    else{
-        stmt->output(level + 4);
-    }
-}
-
-void SeqNode::addNext(StmtNode* next)
-{
-    stmtList.push_back(next);
-}
-
-void SeqNode::output(int level)
-{
-    fprintf(yyout, "%*cSequence\n", level, ' ');
-    for(auto stmt : stmtList)
-    {
-        stmt -> output(level + 4);
-    }
-}
-
-void DeclStmt::output(int level)
-{
-    fprintf(yyout, "%*cDeclStmt\n", level, ' ');
-    for(auto def : defList){
-        def->output(level+4);
-    }
-}
-
-void IfStmt::output(int level)
-{
-    fprintf(yyout, "%*cIfStmt\n", level, ' ');
-    cond->output(level + 4);
-    thenStmt->output(level + 4);
-}
-
-void IfElseStmt::output(int level)
-{
-    fprintf(yyout, "%*cIfElseStmt\n", level, ' ');
-    cond->output(level + 4);
-    thenStmt->output(level + 4);
-    elseStmt->output(level + 4);
-}
-
-void BreakStmt::output(int level)
-{
-    fprintf(yyout, "%*cBreak Stmt\n", level, ' ');
-}
-
-// void ContinueStmt::output(int level)
-// {
-//     fprintf(yyout, "%*cContinue Stmt\n", level, ' ');
-// }
-
-void ReturnStmt::output(int level)
-{
-    fprintf(yyout, "%*cReturnStmt\n", level, ' ');
-    if(retValue == nullptr){
-        fprintf(yyout, "%*cNull Stmt\n", level+4, ' ');
-    }
-    else{
-        retValue->output(level + 4);
-    }
-    // retValue->output(level + 4);
-}
-
-void AssignStmt::output(int level)
-{
-    fprintf(yyout, "%*cAssignStmt\n", level, ' ');
-    lval->output(level + 4);
-    expr->output(level + 4);
-}
-
-void FunctionDef::output(int level)
-{
-    std::string name, type;
-    name = se->toStr();
-    type = se->getType()->toStr();
-    fprintf(yyout, "%*cFunctionDefine function name: %s, type: %s\n", level, ' ', 
-            name.c_str(), type.c_str());
-    if(params!=nullptr){
-        params->output(level+4);
-    }
-    else{
-        fprintf(yyout, "%*cFuncDefParamsNode NULL\n", level+4, ' ');
-    }
-    stmt->output(level + 4);
-}
-
 void EmptyStmt::output(int level)
 {
-    fprintf(yyout,"%*cEmptyStmt\n", level, ' ');
+    fprintf(yyout, "%*cEmptyStmt\n", level, ' ');
+}
+
+void ExprStmtNode::addNext(ExprNode* next)
+{
+    exprList.push_back(next);
+}
+
+void ExprStmtNode::output(int level)
+{
+    fprintf(yyout, "%*cExprStmtNode\n", level, ' ');
+    for(auto expr : exprList)
+    {
+        expr->output(level+4);
+    }
 }
 
 void FuncCallNode::output(int level)
@@ -194,9 +134,7 @@ void FuncCallNode::output(int level)
     SymbolEntry* funcEntry = funcId->getSymbolEntry();
     name = funcEntry->toStr();
     type = funcEntry->getType()->toStr();
-
     scope = dynamic_cast<IdentifierSymbolEntry*>(funcEntry)->getScope();
-    //分别得到函数名、函数返回类型以及作用域级别
     fprintf(yyout, "%*cFuncCallNode\tfuncName: %s\t funcType: %s\tscope: %d\n", 
             level, ' ', name.c_str(), type.c_str(), scope);
     if(params!=nullptr){
@@ -220,6 +158,44 @@ void FuncCallParamsNode::output(int level)
     }
 }
 
+void CompoundStmt::output(int level)
+{
+    fprintf(yyout, "%*cCompoundStmt\n", level, ' ');
+    if(stmt == nullptr){
+        fprintf(yyout, "%*cNull Stmt\n", level+4, ' ');
+    }
+    else{
+        stmt->output(level + 4);
+    }
+}
+
+void SeqNode::addNext(StmtNode* next)
+{
+    stmtList.push_back(next);
+}
+
+void SeqNode::output(int level)
+{
+    fprintf(yyout, "%*cSequence\n", level, ' ');
+    for(auto stmt : stmtList)
+    {
+        stmt->output(level + 4);
+    }
+}
+
+void DeclStmt::addNext(DefNode* next)
+{
+    defList.push_back(next);
+}
+
+void DeclStmt::output(int level)
+{
+    fprintf(yyout, "%*cDeclStmt\n", level, ' ');
+    for(auto def : defList){
+        def->output(level+4);
+    }
+}
+
 void DefNode::output(int level)
 {
     std::string constStr = isConst ? "true" : "false";
@@ -233,13 +209,6 @@ void DefNode::output(int level)
         initVal->output(level+4);
     }
 }
-
-void DeclStmt::addNext(DefNode* next)
-{
-    defList.push_back(next);
-}
-
-
 
 void InitValNode::addNext(ExprNode* next)
 {
@@ -257,6 +226,52 @@ void InitValNode::output(int level)
     }
 }
 
+void IfStmt::output(int level)
+{
+    fprintf(yyout, "%*cIfStmt\n", level, ' ');
+    cond->output(level + 4);
+    thenStmt->output(level + 4);
+}
+
+void IfElseStmt::output(int level)
+{
+    fprintf(yyout, "%*cIfElseStmt\n", level, ' ');
+    cond->output(level + 4);
+    thenStmt->output(level + 4);
+    elseStmt->output(level + 4);
+}
+
+void WhileStmt::output(int level)
+{
+    fprintf(yyout, "%*cWhileStmt\n", level, ' ');
+    cond->output(level+4);
+    bodyStmt->output(level+4);
+}
+
+void BreakStmt::output(int level)
+{
+    fprintf(yyout, "%*cBreak Stmt\n", level, ' ');
+}
+
+void ReturnStmt::output(int level)
+{
+    fprintf(yyout, "%*cReturnStmt\n", level, ' ');
+    if(retValue == nullptr){
+        fprintf(yyout, "%*cNull Stmt\n", level+4, ' ');
+    }
+    else{
+        retValue->output(level + 4);
+    }
+    // retValue->output(level + 4);
+}
+
+void AssignStmt::output(int level)
+{
+    fprintf(yyout, "%*cAssignStmt\n", level, ' ');
+    lval->output(level + 4);
+    expr->output(level + 4);
+}
+
 void FuncDefParamsNode::addNext(Id* next)
 {
     paramsList.push_back(next);
@@ -270,42 +285,18 @@ void FuncDefParamsNode::output(int level)
     }
 }
 
-Type* ExprNode::getType()
+void FunctionDef::output(int level)
 {
-    return symbolEntry->getType();
-}
-
-void ExprStmtNode::addNext(ExprNode* next)
-{
-    exprList.push_back(next);
-}
-
-void ExprStmtNode::output(int level)
-{
-    fprintf(yyout, "%*cExprStmtNode\n", level, ' ');
-    for(auto expr : exprList)
-    {
-        expr->output(level+4);
+    std::string name, type;
+    name = se->toStr();
+    type = se->getType()->toStr();
+    fprintf(yyout, "%*cFunctionDefine function name: %s, type: %s\n", level, ' ', 
+            name.c_str(), type.c_str());
+    if(params!=nullptr){
+        params->output(level+4);
     }
-}
-
-void OneOpExpr::output(int level) {
-    std::string op_str;
-    switch (op) {
-        case NOT:
-            op_str = "not";
-            break;
-        case SUB:
-            op_str = "minus";
-            break;
+    else{
+        fprintf(yyout, "%*cFuncDefParamsNode NULL\n", level+4, ' ');
     }
-    fprintf(yyout, "%*cOneOpExpr\top: %s\ttype: %s\n", level, ' ', op_str.c_str(), symbolEntry->getType()->toStr().c_str());
-    expr->output(level + 4);
-}
-
-void WhileStmt::output(int level)
-{
-    fprintf(yyout, "%*cWhileStmt\n", level, ' ');
-    cond->output(level+4);
-    bodyStmt->output(level+4);
+    stmt->output(level + 4);
 }

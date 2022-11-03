@@ -5,7 +5,7 @@
     extern Ast ast;
     int yylex();
     int yyerror( char const * );
-    // 当前类型
+
     Type* currentType;
 }
 
@@ -25,42 +25,37 @@
 }
 
 %start Program
-%token CONST
 %token <strtype> ID 
 %token <itype> INTEGER
-%token <ftype> FLOATNUM
+%token <ftype> FLOATING
+%token CONST
+%token TYPE_INT TYPE_FLOAT TYPE_VOID
 %token IF ELSE WHILE BREAK CONTINUE RETURN
-%token INT_TYPE VOID_TYPE FLOAT_TYPE
-%token LPAREN RPAREN LBRACK RBRACK LBRACE RBRACE SEMICOLON COMMA
-%token ADD SUB MUL DIV MOD AND OR NOT LESS LESSEQ GREAT GREATEQ EQUAL NEQUAL ASSIGN
+%token LPAREN RPAREN LBRACKET RBRACKET LBRACE RBRACE COMMA SEMICOLON
+%token ADD SUB MUL DIV MOD AND OR NOT LESS LESSEQ GREAT GREATEQ EQ NEQ ASSIGN
 
-%type <stmttype> Stmts Stmt AssignStmt BlockStmt ExpStmt IfStmt WhileStmt BreakStmt  ReturnStmt 
+%type <stmttype> Stmts Stmt AssignStmt ExpStmt BlockStmt IfStmt WhileStmt BreakStmt ContinueStmt ReturnStmt
 %type <stmttype> DeclStmt ConstDefList ConstDef ConstInitVal VarDefList VarDef VarInitVal FuncDef FuncParams FuncParam FuncRParams
-%type <exprtype> Exp ConstExp AddExp MulExp UnaryExp Cond LOrExp PrimaryExp LVal RelExp EqExp LAndExp
+%type <exprtype> Exp ConstExp AddExp MulExp UnaryExp PrimaryExp LVal Cond LOrExp LAndExp EqExp RelExp
 %type <type> Type
 
 %precedence THEN
 %precedence ELSE
 %%
+
+// 程序
 Program
-    : Stmts {
-        ast.setRoot($1);
-    }
+    :   Stmts{
+            ast.setRoot($1);
+        }
     ;
 
-/* Stmts
-    : Stmt {$$=$1;}
-    | Stmts Stmt{
-        $$ = new SeqNode($1, $2);
-    }
-    ; */
+// 语句序列
 Stmts
     :   Stmts Stmt{
-            //这里需要注意的是递归推导出的每个Stmts都是同一个节点，
-            //但拆分出的Stmt会被自下而上的压入vector
-            SeqNode* node = (SeqNode*)$1; //创建一个SeqNode类型节点指针，赋值为Stmts
-            node->addNext((StmtNode*)$2);//将Stmt放入该节点的vector中
-            $$ = (StmtNode*) node;//将识别到的Stmts赋值为该节点（指针）
+            SeqNode* node = (SeqNode*)$1;
+            node->addNext((StmtNode*)$2);
+            $$ = (StmtNode*) node;
         }
     |   Stmt{
             SeqNode* node = new SeqNode();
@@ -69,40 +64,41 @@ Stmts
         }
     ;
 
+// 语句
 Stmt
-    : AssignStmt {$$=$1;}
-    | ExpStmt SEMICOLON{$$=$1;}
-    | BlockStmt {$$=$1;}
-    | IfStmt {$$=$1;}
-    | WhileStmt {$$=$1;}
-    | BreakStmt {$$=$1;}
-    /* | ContinueStmt {$$=$1;} */
-    | ReturnStmt {$$=$1;}
-    | DeclStmt {$$=$1;}
-    | FuncDef {$$=$1;}
-    | SEMICOLON {$$ = new EmptyStmt();}
+    :   AssignStmt {$$=$1;}
+    |   ExpStmt SEMICOLON{$$=$1;}
+    |   BlockStmt {$$=$1;}
+    |   IfStmt {$$=$1;}
+    |   WhileStmt {$$=$1;}
+    |   BreakStmt {$$=$1;}
+    |   ContinueStmt {$$=$1;}
+    |   ReturnStmt {$$=$1;}
+    |   DeclStmt {$$=$1;}
+    |   FuncDef {$$=$1;}
+    |   SEMICOLON {$$ = new EmptyStmt();}
     ;
+
+// 左值
 LVal
-    : ID {
-        //识别到标识符就创建一个符号表项指针，并通过全局符号表指针
-        //identifiers查找对应的标识符。没找到就打印错误信息
-        //找到就创建一个Id节点类（继承自ExprNode）
-        SymbolEntry *se;
-        se = identifiers->lookup($1);
-        if(se == nullptr)
-        {
-            fprintf(stderr, "identifier \"%s\" is undefined\n", (char*)$1);
-            delete [](char*)$1;
-            assert(se != nullptr);
+    :   ID {
+            SymbolEntry *se;
+            se = identifiers->lookup($1);
+            if(se == nullptr)
+            {
+                fprintf(stderr, "identifier \"%s\" is undefined\n", (char*)$1);
+                delete [](char*)$1;
+                assert(se != nullptr);
+            }
+            $$ = new Id(se);
+            delete []$1;
         }
-        $$ = new Id(se);
-        delete []$1;
-    }
-    //数组左值
+    // 缺少数组的左值
     ;
+
+// 赋值语句
 AssignStmt
-    :
-        LVal ASSIGN Exp SEMICOLON {
+    :   LVal ASSIGN Exp SEMICOLON {
             $$ = new AssignStmt($1, $3);
         }
     ;
@@ -121,31 +117,30 @@ ExpStmt
         }
     ;
 
-
+// 语句快
 BlockStmt
-    :   LBRACE 
-        //遇到语句块左大括号就创建符号表，这时新的符号表是原来的后一级
-        {identifiers = new SymbolTable(identifiers);}
-        Stmts RBRACE 
-        {
+    :   LBRACE {
+            identifiers = new SymbolTable(identifiers);
+        } 
+        Stmts RBRACE {
             $$ = new CompoundStmt($3);
             // SymbolTable *top = identifiers;
-            //由于全局符号表，因此需要通过前向指针使之保持原有位置
             identifiers = identifiers->getPrev();
             // delete top;
         }
-    |   LBRACE RBRACE 
-        {
+    |   LBRACE RBRACE {
             $$ = new CompoundStmt(nullptr);
         }
     ;
+
+// if语句
 IfStmt
-    : IF LPAREN Cond RPAREN Stmt %prec THEN {
-        $$ = new IfStmt($3, $5);
-    }
-    | IF LPAREN Cond RPAREN Stmt ELSE Stmt {
-        $$ = new IfElseStmt($3, $5, $7);
-    }
+    :   IF LPAREN Cond RPAREN Stmt %prec THEN {
+            $$ = new IfStmt($3, $5);
+        }
+    |   IF LPAREN Cond RPAREN Stmt ELSE Stmt {
+            $$ = new IfElseStmt($3, $5, $7);
+        }
     ;
 
 //while 语句
@@ -155,7 +150,7 @@ WhileStmt
         }
     ;
 
-//break 语句
+//todo break 语句
 BreakStmt
     :   BREAK SEMICOLON {
             //std::cout << "BreakStmt -> BREAK SEMICOLON" << std::endl;
@@ -163,18 +158,17 @@ BreakStmt
         }
     ;
 
-//continue 语句
-/* ContinueStmt
+//todo continue 语句
+ContinueStmt
     :   CONTINUE SEMICOLON{
-            // std::cout << "ContinueStmt -> CONTINUE SEMICOLON" << std::endl;
-            $$ = new ContinueStmt();
+            std::cout << "ContinueStmt -> CONTINUE SEMICOLON" << std::endl;
         }
-    ; */
+    ;
 
 
+// return 语句
 ReturnStmt
-    :
-        RETURN Exp SEMICOLON{
+    :   RETURN Exp SEMICOLON {
             $$ = new ReturnStmt($2);
         }
     |   RETURN SEMICOLON {
@@ -183,12 +177,12 @@ ReturnStmt
         }
     ;
 
-//变量表达式
+// 变量表达式
 Exp
-    :
-        AddExp {$$ = $1;}
+    :   AddExp {
+            $$ = $1;
+        }
     ;
-
 
 // 常量表达式
 ConstExp
@@ -197,43 +191,13 @@ ConstExp
         }
     ;
 
-
-/* 
-    Symbol entry for temporary variable created by compiler. Example:
-
-    int a;
-    a = 1 + 2 + 3;
-
-    The compiler would generate intermediate code like:
-
-    t1 = 1 + 2
-    t2 = t1 + 3
-    a = t2
-
-    So compiler should create temporary symbol entries for t1 and t2:
-
-    | temporary variable | label |
-    | t1                 | 1     |
-    | t2                 | 2     |
-
-class TemporarySymbolEntry : public SymbolEntry
-{
-private:
-    int label;
-public:
-    TemporarySymbolEntry(Type *type, int label);
-    virtual ~TemporarySymbolEntry() {};
-    std::string toStr();
-};
-*/
-
+// 加法级表达式
 AddExp
     :   MulExp {
             $$ = $1;
         }
     |   AddExp ADD MulExp {
             SymbolEntry *se;
-            //只要有一个是float那么就应该创建float类型的表项
             if($1->getType()->isInt() && $3->getType()->isInt()){
                 se = new TemporarySymbolEntry(TypeSystem::intType, SymbolTable::getLabel());
             }
@@ -254,6 +218,7 @@ AddExp
         }
     ;
 
+// 乘法级表达式
 MulExp
     :   UnaryExp {
             $$ = $1;
@@ -288,15 +253,14 @@ MulExp
             }
             $$ = new BinaryExpr(se, BinaryExpr::MOD, $1, $3);
         }
-
-
+    ;
 
 // 非数组表达式
 UnaryExp
     :   PrimaryExp {
             $$ = $1;
         }
-    |   ID LPAREN FuncRParams RPAREN {//函数调用表达式，例如a = b + f(x)中的"f(x)""
+    |   ID LPAREN FuncRParams RPAREN {
             SymbolEntry *se;
             se = identifiers->lookup($1);
             if(se == nullptr)
@@ -321,26 +285,6 @@ UnaryExp
         }
     ;
 
-/*  
-    Symbol entry for literal constant. Example:
-
-    int a = 1;
-
-    Compiler should create constant symbol entry for literal constant '1'.
-
-class ConstantSymbolEntry : public SymbolEntry
-{
-private:
-    int value;
-
-public:
-    ConstantSymbolEntry(Type *type, int value);
-    virtual ~ConstantSymbolEntry() {};
-    int getValue() const {return value;};
-    std::string toStr();
-    // You can add any function you need here.
-};
-*/
 // 原始表达式
 PrimaryExp
     :   LVal {
@@ -353,13 +297,11 @@ PrimaryExp
             SymbolEntry *se = new ConstantSymbolEntry(TypeSystem::intType, $1);
             $$ = new Constant(se);
         }
-    |   FLOATNUM {
+    |   FLOATING {
             SymbolEntry *se = new ConstantSymbolEntry(TypeSystem::floatType, $1);
             $$ = new Constant(se);
         }
     ;
-
-
 
 // 函数参数列表
 FuncRParams
@@ -378,53 +320,47 @@ FuncRParams
         }
     ;
 
-
-
-
+// 条件表达式
 Cond
-    :
-        LOrExp {$$ = $1;}
+    :   LOrExp {$$ = $1;}
     ;
 
-
+// 或运算表达式
 LOrExp
-    :
-    LAndExp {$$ = $1;}
-    |
-    LOrExp OR LAndExp
-    {
-        SymbolEntry *se = new TemporarySymbolEntry(TypeSystem::boolType, SymbolTable::getLabel());
-        $$ = new BinaryExpr(se, BinaryExpr::OR, $1, $3);
-    }
+    :   LAndExp {
+            $$ = $1;
+        }
+    |   LOrExp OR LAndExp {
+            SymbolEntry *se = new TemporarySymbolEntry(TypeSystem::boolType, SymbolTable::getLabel());
+            $$ = new BinaryExpr(se, BinaryExpr::OR, $1, $3);
+        }
     ;
 
+// 与运算表达式
 LAndExp
-    :
-    EqExp {$$ = $1;}
-    |
-    LAndExp AND EqExp
-    {
-        SymbolEntry *se = new TemporarySymbolEntry(TypeSystem::boolType, SymbolTable::getLabel());
-        $$ = new BinaryExpr(se, BinaryExpr::AND, $1, $3);
-    }
-   
+    :   EqExp {
+            $$ = $1;
+        }
+    |   LAndExp AND EqExp {
+            SymbolEntry *se = new TemporarySymbolEntry(TypeSystem::boolType, SymbolTable::getLabel());
+            $$ = new BinaryExpr(se, BinaryExpr::AND, $1, $3);
+        }
+    ;
+
 // 相等判断表达式
 EqExp
     :   RelExp {
             $$ = $1;
         }
-    |   EqExp EQUAL RelExp {
+    |   EqExp EQ RelExp {
             SymbolEntry* se = new TemporarySymbolEntry(TypeSystem::boolType, SymbolTable::getLabel());
-            $$ = new BinaryExpr(se, BinaryExpr::EQUAL, $1, $3);
+            $$ = new BinaryExpr(se, BinaryExpr::EQ, $1, $3);
         }
-    |   EqExp NEQUAL RelExp {
+    |   EqExp NEQ RelExp {
             SymbolEntry* se = new TemporarySymbolEntry(TypeSystem::boolType, SymbolTable::getLabel());
-            $$ = new BinaryExpr(se, BinaryExpr::NEQUAL, $1, $3);
+            $$ = new BinaryExpr(se, BinaryExpr::NEQ, $1, $3);
         }
     ;
-
-
-
 
 // 关系表达式
 RelExp
@@ -449,22 +385,20 @@ RelExp
         }
     ;
 
-
+// 类型
 Type
-    : INT_TYPE {
-        $$ = TypeSystem::intType;
-        //例如读取到"int a"，就把currentType设置为int
-        currentType = TypeSystem::intType;
-    }
-    | FLOAT_TYPE{
-        $$ = TypeSystem::floatType;
-        currentType = TypeSystem::floatType;
-    }
-    | VOID_TYPE {
-        $$ = TypeSystem::voidType;
-    }
+    :   TYPE_INT {
+            $$ = TypeSystem::intType;
+            currentType = TypeSystem::intType;
+        }
+    |   TYPE_FLOAT {
+            $$ = TypeSystem::floatType;
+            currentType = TypeSystem::floatType;
+        }
+    |   TYPE_VOID {
+            $$ = TypeSystem::voidType;
+        }
     ;
-
 
 // 声明语句
 DeclStmt
@@ -474,62 +408,6 @@ DeclStmt
     |   Type VarDefList SEMICOLON {
             $$ = $2;
         }
-    ;
-
-// 变量定义列表
-VarDefList
-    :   VarDefList COMMA VarDef {
-            DeclStmt* node = (DeclStmt*) $1;
-            node->addNext((DefNode*)$3);
-            $$ = node;
-        }
-    |   VarDef {
-            DeclStmt* node = new DeclStmt(true);
-            node->addNext((DefNode*)$1);
-            $$ = node;
-        }
-    ;
-
-// 变量定义
-VarDef
-    :   ID {
-            // 将ID插入符号表中
-            Type* type;
-            if(currentType->isInt()){
-                type = TypeSystem::intType;
-            }
-            else{
-                type = TypeSystem::floatType;
-            }
-            SymbolEntry *se;
-            se = new IdentifierSymbolEntry(type, $1, identifiers->getLevel());
-            identifiers->install($1, se);
-            $$ = new DefNode(new Id(se), nullptr, false, false);
-        }
-    |   ID ASSIGN VarInitVal {
-            Type* type;
-            if(currentType->isInt()){
-                type = TypeSystem::intType;
-            }
-            else{
-                type = TypeSystem::floatType;
-            }
-            SymbolEntry *se;
-            se = new IdentifierSymbolEntry(type, $1, identifiers->getLevel());
-            identifiers->install($1, se);
-            $$ = new DefNode(new Id(se), (InitValNode*)$3, false, false);
-        }
-    // todo 数组变量的定义
-    ;
-
-// 变量初始化值
-VarInitVal
-    :   Exp {
-            InitValNode* node = new InitValNode(false, false);
-            node->addNext((ExprNode*)$1);
-            $$ = node;
-        }
-    // todo 数组变量的初始化值
     ;
 
 // 常量定义列表
@@ -549,7 +427,7 @@ ConstDefList
 // 常量定义
 ConstDef
     :   ID ASSIGN ConstInitVal {
-            // 将ID插入符号表中
+            // 首先将ID插入符号表中
             Type* type;
             if(currentType->isInt()){
                 type = TypeSystem::constIntType;
@@ -575,30 +453,83 @@ ConstInitVal
     // todo 常量数组的初始化值 
     ;
 
-
-FuncDef
-    :
-    Type ID {
-        Type *funcType;
-        funcType = new FunctionType($1,{});
-        SymbolEntry *se = new IdentifierSymbolEntry(funcType, $2, identifiers->getLevel());
-        identifiers->install($2, se);
-        identifiers = new SymbolTable(identifiers);
-    }
-    LPAREN FuncParams RPAREN
-    BlockStmt
-    {
-        SymbolEntry *se;
-        se = identifiers->lookup($2);
-        assert(se != nullptr);
-        $$ = new FunctionDef(se, (FuncDefParamsNode*)$5, $7);
-        SymbolTable *top = identifiers;
-        identifiers = identifiers->getPrev();
-        delete top;
-        delete []$2;
-    }
+// 变量定义列表
+VarDefList
+    :   VarDefList COMMA VarDef {
+            DeclStmt* node = (DeclStmt*) $1;
+            node->addNext((DefNode*)$3);
+            $$ = node;
+        }
+    |   VarDef {
+            DeclStmt* node = new DeclStmt(true);
+            node->addNext((DefNode*)$1);
+            $$ = node;
+        }
     ;
 
+// 变量定义
+VarDef
+    :   ID {
+            // 首先将ID插入符号表中
+            Type* type;
+            if(currentType->isInt()){
+                type = TypeSystem::intType;
+            }
+            else{
+                type = TypeSystem::floatType;
+            }
+            SymbolEntry *se;
+            se = new IdentifierSymbolEntry(type, $1, identifiers->getLevel());
+            identifiers->install($1, se);
+            $$ = new DefNode(new Id(se), nullptr, false, false);
+        }
+    |   ID ASSIGN VarInitVal {
+            // 首先将ID插入符号表中
+            Type* type;
+            if(currentType->isInt()){
+                type = TypeSystem::intType;
+            }
+            else{
+                type = TypeSystem::floatType;
+            }
+            SymbolEntry *se;
+            se = new IdentifierSymbolEntry(type, $1, identifiers->getLevel());
+            identifiers->install($1, se);
+            $$ = new DefNode(new Id(se), (InitValNode*)$3, false, false);
+        }
+    // todo 数组变量的定义
+    ;
+
+// 变量初始化值
+VarInitVal
+    :   Exp {
+            InitValNode* node = new InitValNode(false, false);
+            node->addNext((ExprNode*)$1);
+            $$ = node;
+        }
+    // todo 数组变量的初始化值
+    ;
+
+// 函数定义
+FuncDef
+    :   Type ID {
+            Type *funcType;
+            funcType = new FunctionType($1,{});
+            SymbolEntry *se = new IdentifierSymbolEntry(funcType, $2, identifiers->getLevel());
+            identifiers->install($2, se);
+            identifiers = new SymbolTable(identifiers);
+        }
+        LPAREN FuncParams RPAREN BlockStmt {
+            SymbolEntry *se;
+            se = identifiers->lookup($2);
+            assert(se != nullptr);
+            $$ = new FunctionDef(se, (FuncDefParamsNode*)$5, $7);
+            SymbolTable *top = identifiers;
+            identifiers = identifiers->getPrev();
+            delete top;
+            delete []$2;
+        }
+    ;
 
 // 函数参数列表
 FuncParams
@@ -627,9 +558,6 @@ FuncParam
     // todo 数组函数参数
     ;
     
-
-
-
 %%
 
 int yyerror(char const* message)
