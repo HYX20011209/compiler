@@ -1,0 +1,66 @@
+program
+    Sequence
+        FunctionDefine function name: fun, type: int()
+            FuncDefParamsNode
+                Id	name: m	scope: 1	type: int
+                Id	name: n	scope: 1	type: int
+            CompoundStmt
+                Sequence
+                    DeclStmt
+                        DefNode	isConst:false	isArray:false
+                            Id	name: rem	scope: 2	type: int
+                            null
+                    WhileStmt
+                        BinaryExpr	op: great	type: bool
+                            Id	name: n	scope: 1	type: int
+                            IntegerLiteral	value: 0	type: int
+                        CompoundStmt
+                            Sequence
+                                AssignStmt
+                                    Id	name: rem	scope: 2	type: int
+                                    BinaryExpr	op: mod	type: int
+                                        Id	name: m	scope: 1	type: int
+                                        Id	name: n	scope: 1	type: int
+                                AssignStmt
+                                    Id	name: m	scope: 1	type: int
+                                    Id	name: n	scope: 1	type: int
+                                AssignStmt
+                                    Id	name: n	scope: 1	type: int
+                                    Id	name: rem	scope: 2	type: int
+                    ReturnStmt
+                        Id	name: m	scope: 1	type: int
+        FunctionDefine function name: main, type: int()
+            FuncDefParamsNode NULL
+            CompoundStmt
+                Sequence
+                    DeclStmt
+                        DefNode	isConst:false	isArray:false
+                            Id	name: n	scope: 2	type: int
+                            null
+                        DefNode	isConst:false	isArray:false
+                            Id	name: m	scope: 2	type: int
+                            null
+                    DeclStmt
+                        DefNode	isConst:false	isArray:false
+                            Id	name: num	scope: 2	type: int
+                            null
+                    AssignStmt
+                        Id	name: m	scope: 2	type: int
+                        FuncCallNode	funcName: getint	 funcType: int()	scope: 0
+                            FuncCallParamsNode NULL
+                    AssignStmt
+                        Id	name: n	scope: 2	type: int
+                        FuncCallNode	funcName: getint	 funcType: int()	scope: 0
+                            FuncCallParamsNode NULL
+                    AssignStmt
+                        Id	name: num	scope: 2	type: int
+                        FuncCallNode	funcName: fun	 funcType: int()	scope: 0
+                            FuncCallParamsNode
+                                Id	name: m	scope: 2	type: int
+                                Id	name: n	scope: 2	type: int
+                    ExprStmtNode
+                        FuncCallNode	funcName: putint	 funcType: void()	scope: 0
+                            FuncCallParamsNode
+                                Id	name: num	scope: 2	type: int
+                    ReturnStmt
+                        IntegerLiteral	value: 0	type: int

@@ -1,0 +1,50 @@
+program
+    Sequence
+        FunctionDefine function name: main, type: int()
+            FuncDefParamsNode NULL
+            CompoundStmt
+                Sequence
+                    DeclStmt
+                        DefNode	isConst:false	isArray:false
+                            Id	name: i	scope: 2	type: int
+                            null
+                    AssignStmt
+                        Id	name: i	scope: 2	type: int
+                        IntegerLiteral	value: 0	type: int
+                    DeclStmt
+                        DefNode	isConst:false	isArray:false
+                            Id	name: sum	scope: 2	type: int
+                            null
+                    AssignStmt
+                        Id	name: sum	scope: 2	type: int
+                        IntegerLiteral	value: 0	type: int
+                    WhileStmt
+                        BinaryExpr	op: less	type: bool
+                            Id	name: i	scope: 2	type: int
+                            IntegerLiteral	value: 100	type: int
+                        CompoundStmt
+                            Sequence
+                                IfStmt
+                                    BinaryExpr	op: eq	type: bool
+                                        Id	name: i	scope: 2	type: int
+                                        IntegerLiteral	value: 50	type: int
+                                    CompoundStmt
+                                        Sequence
+                                            AssignStmt
+                                                Id	name: i	scope: 2	type: int
+                                                BinaryExpr	op: add	type: int
+                                                    Id	name: i	scope: 2	type: int
+                                                    IntegerLiteral	value: 1	type: int
+                                            ContinueStmt
+                                AssignStmt
+                                    Id	name: sum	scope: 2	type: int
+                                    BinaryExpr	op: add	type: int
+                                        Id	name: sum	scope: 2	type: int
+                                        Id	name: i	scope: 2	type: int
+                                AssignStmt
+                                    Id	name: i	scope: 2	type: int
+                                    BinaryExpr	op: add	type: int
+                                        Id	name: i	scope: 2	type: int
+                                        IntegerLiteral	value: 1	type: int
+                    ReturnStmt
+                        Id	name: sum	scope: 2	type: int

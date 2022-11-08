@@ -1,0 +1,13 @@
+program
+    Sequence
+        DeclStmt
+            DefNode	isConst:true	isArray:false
+                Id	name: a	scope: 0	type: const int
+                InitValNode	isConst:true	isArray:false
+                    IntegerLiteral	value: 10	type: int
+        FunctionDefine function name: main, type: int()
+            FuncDefParamsNode NULL
+            CompoundStmt
+                Sequence
+                    ReturnStmt
+                        Id	name: a	scope: 0	type: const int
