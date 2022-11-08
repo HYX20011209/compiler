@@ -1,8 +1,0 @@
-program
-    Sequence
-        FunctionDefine function name: main, type: int()
-            FuncDefParamsNode NULL
-            CompoundStmt
-                Sequence
-                    ReturnStmt
-                        IntegerLiteral	value: 3	type: int
