@@ -124,9 +124,9 @@ BlockStmt
         } 
         Stmts RBRACE {
             $$ = new CompoundStmt($3);
-            SymbolTable *top = identifiers;
+            // SymbolTable *top = identifiers;
             identifiers = identifiers->getPrev();
-            delete top;
+            // delete top;
         }
     |   LBRACE RBRACE {
             $$ = new CompoundStmt(nullptr);
@@ -177,14 +177,14 @@ ReturnStmt
 
 // 变量表达式
 Exp
-    :   AddExp {
+    :   LOrExp {
             $$ = $1;
         }
     ;
 
 // 常量表达式
 ConstExp
-    :   AddExp {
+    :   LOrExp {
             $$ = $1;
         }
     ;
