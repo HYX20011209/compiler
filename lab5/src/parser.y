@@ -124,9 +124,7 @@ BlockStmt
         } 
         Stmts RBRACE {
             $$ = new CompoundStmt($3);
-            // SymbolTable *top = identifiers;
             identifiers = identifiers->getPrev();
-            // delete top;
         }
     |   LBRACE RBRACE {
             $$ = new CompoundStmt(nullptr);
@@ -175,6 +173,11 @@ ReturnStmt
         }
     ;
 
+
+
+
+
+
 // 变量表达式
 Exp
     :   LOrExp {
@@ -189,6 +192,72 @@ ConstExp
         }
     ;
 
+
+// 条件表达式
+Cond
+    :   LOrExp {$$ = $1;}
+    ;
+
+// 或运算表达式
+LOrExp
+    :   LAndExp {
+            $$ = $1;
+        }
+    |   LOrExp OR LAndExp {
+            SymbolEntry *se = new TemporarySymbolEntry(TypeSystem::boolType, SymbolTable::getLabel());
+            $$ = new BinaryExpr(se, BinaryExpr::OR, $1, $3);
+        }
+    ;
+
+// 与运算表达式
+LAndExp
+    :   EqExp {
+            $$ = $1;
+        }
+    |   LAndExp AND EqExp {
+            SymbolEntry *se = new TemporarySymbolEntry(TypeSystem::boolType, SymbolTable::getLabel());
+            $$ = new BinaryExpr(se, BinaryExpr::AND, $1, $3);
+        }
+    ;
+
+// 相等判断表达式
+EqExp
+    :   RelExp {
+            $$ = $1;
+        }
+    |   EqExp EQ RelExp {
+            SymbolEntry* se = new TemporarySymbolEntry(TypeSystem::boolType, SymbolTable::getLabel());
+            $$ = new BinaryExpr(se, BinaryExpr::EQ, $1, $3);
+        }
+    |   EqExp NEQ RelExp {
+            SymbolEntry* se = new TemporarySymbolEntry(TypeSystem::boolType, SymbolTable::getLabel());
+            $$ = new BinaryExpr(se, BinaryExpr::NEQ, $1, $3);
+        }
+    ;
+
+// 关系表达式
+RelExp
+    :   AddExp {
+            $$ = $1;
+        }
+    |   RelExp LESS AddExp {
+            SymbolEntry *se = new TemporarySymbolEntry(TypeSystem::boolType, SymbolTable::getLabel());
+            $$ = new BinaryExpr(se, BinaryExpr::LESS, $1, $3);
+        }
+    |   RelExp LESSEQ AddExp {
+            SymbolEntry *se = new TemporarySymbolEntry(TypeSystem::boolType, SymbolTable::getLabel());
+            $$ = new BinaryExpr(se, BinaryExpr::LESSEQ, $1, $3);
+        }
+    |   RelExp GREAT AddExp {
+            SymbolEntry *se = new TemporarySymbolEntry(TypeSystem::boolType, SymbolTable::getLabel());
+            $$ = new BinaryExpr(se, BinaryExpr::GREAT, $1, $3);
+        }
+    |   RelExp GREATEQ AddExp {
+            SymbolEntry *se = new TemporarySymbolEntry(TypeSystem::boolType, SymbolTable::getLabel());
+            $$ = new BinaryExpr(se, BinaryExpr::GREATEQ, $1, $3);
+        }
+    ;
+
 // 加法级表达式
 AddExp
     :   MulExp {
@@ -196,8 +265,15 @@ AddExp
         }
     |   AddExp ADD MulExp {
             SymbolEntry *se;
-            if($1->getType()->isInt() && $3->getType()->isInt()){
-                se = new TemporarySymbolEntry(TypeSystem::intType, SymbolTable::getLabel());
+            // if($1->getType()->isInt() && $3->getType()->isInt()){
+            //     se = new TemporarySymbolEntry(TypeSystem::intType, SymbolTable::getLabel());
+            // }
+            // else{
+            //     se = new TemporarySymbolEntry(TypeSystem::floatType, SymbolTable::getLabel());
+            // }
+            if(($1->getType()->isInt()||$1->getType()->isConstInt())
+                &&($3->getType()->isInt()||$3->getType()->isConstInt())){
+                    se = new TemporarySymbolEntry(TypeSystem::intType, SymbolTable::getLabel());
             }
             else{
                 se = new TemporarySymbolEntry(TypeSystem::floatType, SymbolTable::getLabel());
@@ -206,8 +282,15 @@ AddExp
         }
     |   AddExp SUB MulExp {
             SymbolEntry *se;
-            if($1->getType()->isInt() && $3->getType()->isInt()){
-                se = new TemporarySymbolEntry(TypeSystem::intType, SymbolTable::getLabel());
+            // if($1->getType()->isInt() && $3->getType()->isInt()){
+            //     se = new TemporarySymbolEntry(TypeSystem::intType, SymbolTable::getLabel());
+            // }
+            // else{
+            //     se = new TemporarySymbolEntry(TypeSystem::floatType, SymbolTable::getLabel());
+            // }
+            if(($1->getType()->isInt()||$1->getType()->isConstInt())
+                &&($3->getType()->isInt()||$3->getType()->isConstInt())){
+                    se = new TemporarySymbolEntry(TypeSystem::intType, SymbolTable::getLabel());
             }
             else{
                 se = new TemporarySymbolEntry(TypeSystem::floatType, SymbolTable::getLabel());
@@ -223,8 +306,15 @@ MulExp
         }
     |   MulExp MUL UnaryExp {
             SymbolEntry *se;
-            if($1->getType()->isInt() && $3->getType()->isInt()){
-                se = new TemporarySymbolEntry(TypeSystem::intType, SymbolTable::getLabel());
+            // if($1->getType()->isInt() && $3->getType()->isInt()){
+            //     se = new TemporarySymbolEntry(TypeSystem::intType, SymbolTable::getLabel());
+            // }
+            // else{
+            //     se = new TemporarySymbolEntry(TypeSystem::floatType, SymbolTable::getLabel());
+            // }
+            if(($1->getType()->isInt()||$1->getType()->isConstInt())
+                &&($3->getType()->isInt()||$3->getType()->isConstInt())){
+                    se = new TemporarySymbolEntry(TypeSystem::intType, SymbolTable::getLabel());
             }
             else{
                 se = new TemporarySymbolEntry(TypeSystem::floatType, SymbolTable::getLabel());
@@ -233,8 +323,15 @@ MulExp
         }
     |   MulExp DIV UnaryExp {
             SymbolEntry *se;
-            if($1->getType()->isInt() && $3->getType()->isInt()){
-                se = new TemporarySymbolEntry(TypeSystem::intType, SymbolTable::getLabel());
+            // if($1->getType()->isInt() && $3->getType()->isInt()){
+            //     se = new TemporarySymbolEntry(TypeSystem::intType, SymbolTable::getLabel());
+            // }
+            // else{
+            //     se = new TemporarySymbolEntry(TypeSystem::floatType, SymbolTable::getLabel());
+            // }
+            if(($1->getType()->isInt()||$1->getType()->isConstInt())
+                &&($3->getType()->isInt()||$3->getType()->isConstInt())){
+                    se = new TemporarySymbolEntry(TypeSystem::intType, SymbolTable::getLabel());
             }
             else{
                 se = new TemporarySymbolEntry(TypeSystem::floatType, SymbolTable::getLabel());
@@ -243,8 +340,15 @@ MulExp
         }
     |   MulExp MOD UnaryExp {
             SymbolEntry *se;
-            if($1->getType()->isInt() && $3->getType()->isInt()){
-                se = new TemporarySymbolEntry(TypeSystem::intType, SymbolTable::getLabel());
+            // if($1->getType()->isInt() && $3->getType()->isInt()){
+            //     se = new TemporarySymbolEntry(TypeSystem::intType, SymbolTable::getLabel());
+            // }
+            // else{
+            //     se = new TemporarySymbolEntry(TypeSystem::floatType, SymbolTable::getLabel());
+            // }
+            if(($1->getType()->isInt()||$1->getType()->isConstInt())
+                &&($3->getType()->isInt()||$3->getType()->isConstInt())){
+                    se = new TemporarySymbolEntry(TypeSystem::intType, SymbolTable::getLabel());
             }
             else{
                 se = new TemporarySymbolEntry(TypeSystem::floatType, SymbolTable::getLabel());
@@ -318,70 +422,7 @@ FuncRParams
         }
     ;
 
-// 条件表达式
-Cond
-    :   LOrExp {$$ = $1;}
-    ;
 
-// 或运算表达式
-LOrExp
-    :   LAndExp {
-            $$ = $1;
-        }
-    |   LOrExp OR LAndExp {
-            SymbolEntry *se = new TemporarySymbolEntry(TypeSystem::boolType, SymbolTable::getLabel());
-            $$ = new BinaryExpr(se, BinaryExpr::OR, $1, $3);
-        }
-    ;
-
-// 与运算表达式
-LAndExp
-    :   EqExp {
-            $$ = $1;
-        }
-    |   LAndExp AND EqExp {
-            SymbolEntry *se = new TemporarySymbolEntry(TypeSystem::boolType, SymbolTable::getLabel());
-            $$ = new BinaryExpr(se, BinaryExpr::AND, $1, $3);
-        }
-    ;
-
-// 相等判断表达式
-EqExp
-    :   RelExp {
-            $$ = $1;
-        }
-    |   EqExp EQ RelExp {
-            SymbolEntry* se = new TemporarySymbolEntry(TypeSystem::boolType, SymbolTable::getLabel());
-            $$ = new BinaryExpr(se, BinaryExpr::EQ, $1, $3);
-        }
-    |   EqExp NEQ RelExp {
-            SymbolEntry* se = new TemporarySymbolEntry(TypeSystem::boolType, SymbolTable::getLabel());
-            $$ = new BinaryExpr(se, BinaryExpr::NEQ, $1, $3);
-        }
-    ;
-
-// 关系表达式
-RelExp
-    :   AddExp {
-            $$ = $1;
-        }
-    |   RelExp LESS AddExp {
-            SymbolEntry *se = new TemporarySymbolEntry(TypeSystem::boolType, SymbolTable::getLabel());
-            $$ = new BinaryExpr(se, BinaryExpr::LESS, $1, $3);
-        }
-    |   RelExp LESSEQ AddExp {
-            SymbolEntry *se = new TemporarySymbolEntry(TypeSystem::boolType, SymbolTable::getLabel());
-            $$ = new BinaryExpr(se, BinaryExpr::LESSEQ, $1, $3);
-        }
-    |   RelExp GREAT AddExp {
-            SymbolEntry *se = new TemporarySymbolEntry(TypeSystem::boolType, SymbolTable::getLabel());
-            $$ = new BinaryExpr(se, BinaryExpr::GREAT, $1, $3);
-        }
-    |   RelExp GREATEQ AddExp {
-            SymbolEntry *se = new TemporarySymbolEntry(TypeSystem::boolType, SymbolTable::getLabel());
-            $$ = new BinaryExpr(se, BinaryExpr::GREATEQ, $1, $3);
-        }
-    ;
 
 // 类型
 Type
@@ -522,9 +563,7 @@ FuncDef
             se = identifiers->lookup($2);
             assert(se != nullptr);
             $$ = new FunctionDef(se, (FuncDefParamsNode*)$5, $7);
-            SymbolTable *top = identifiers;
             identifiers = identifiers->getPrev();
-            delete top;
             delete []$2;
         }
     ;

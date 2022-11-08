@@ -138,6 +138,5 @@ public:
 };
 
 extern SymbolTable *identifiers;
-extern SymbolTable *globals;
 
 #endif
